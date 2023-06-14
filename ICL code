@@ -1,0 +1,3229 @@
+# This project is developed by :  Marion BONNET and Fedi HAMDI
+# Project dev cycle :
+# Started: June 20th 2022 
+# Last update: September 19th 2022 By Fedi HAMDI
+# Team : Data insights Team
+# Location : Boulogne
+# Owner : IPSEN
+# Licence : ****
+
+#library(profvis)
+# Define some credentials for user and manager connection.
+# 
+#library(keyring)
+adls_base_path <-"/dbfs/mnt/R-Shiny/icl"
+suppressPackageStartupMessages(library(shinymanager))
+callback <-  DT::JS("table.column(1).nodes().to$().css({cursor: 'pointer'});",
+                    "// Format the nested table into another table",
+                    "var childId = function(d){",
+                    "  var tail = d.slice(5, d.length - 1);",
+                    "  return 'child_' + tail.join('_').replace(/[\\s|\\.|'|,|\\(|\\)]/g, '_');",
+                    "};",
+                    "var format = function (d) {",
+                    "  if (d != null) {",
+                    "    var id = childId(d);",
+                    "    var html = ", 
+                    "          '<table class=\"display compact\" id=\"' + id + '\"><thead><tr>';",
+                    "    for (var key in d[d.length-1][0]) {",
+                    "      html += '<th>' + key + '</th>';",
+                    "    }",
+                    "    html += '</tr></thead></table>'",
+                    "    return html;",
+                    "  } else {",
+                    "    return '';",
+                    "  }",
+                    "};",
+                    
+                    "var format_datatable = function (d) {",
+                    "  var dataset = [];",
+                    "  var n = d.length - 1;",
+                    "  for (var i = 0; i < d[n].length; i++) {",
+                    "    var datarow = $.map(d[n][i], function (value, index) {",
+                    "      return [value];",
+                    "    });",
+                    "    dataset.push(datarow);",
+                    "  }",
+                    "  var id = 'table#' + childId(d);",
+                    "  var subtable = $(id).DataTable({",
+                    "                     'data': dataset,",
+                    "                     'autoWidth': true,",
+                    "                     'deferRender': true,",
+                    "                     'info': false,",
+                    "                     'lengthChange': false,",
+                    "                     'ordering': d[n].length > 1,",
+                    "                     'order': [],",
+                    "                     'paging': false,",
+                    "                     'scrollX': false,",
+                    "                     'scrollY': false,",
+                    "                     'searching': true,",
+                    "                     'sortClasses': false,",
+                    "                     'columnDefs': [{targets: 0, className: 'dt-center'}, { width: 500, targets: 0 },{targets: 2, className: 'dt-center'}]",
+                    "                   });",
+                    "};",
+                    "table.on('click', 'td.details-control', function () {",
+                    "  var td = $(this),",
+                    "      row = table.row(td.closest('tr'));",
+                    "  if (row.child.isShown()) {",
+                    "    row.child.hide();",
+                    "    td.html('');",
+                    "  } else {",
+                    "    row.child(format(row.data())).show();",
+                    "    td.html('');",
+                    "    format_datatable(row.data());",
+                    "  }",
+                    "});"
+)
+### treatments callback
+## the callback is written in javascript
+# This script is responsible for creating the sub tables for each data
+callback_clsf <-  DT::JS("table.column(1).nodes().to$().css({cursor: 'pointer'});",
+                         "// Format the nested table into another table",
+                         "var childId = function(d){",
+                         "  var tail = d.slice(2, d.length - 4);",
+                         "  return 'child_' + tail.join('_').replace(/[\\s|\\.|'|,|\\(|\\)]/g, '_');",
+                         "};",
+                         "var format = function (d) {",
+                         "  if (d != null) {",
+                         "    var id = childId(d);",
+                         "    var html = ", 
+                         "          '<table class=\"display compact\" id=\"' + id + '\"><thead><tr>';",
+                         "    for (var key in d[d.length-1][0]) {",
+                         "      html += '<th>' + key + '</th>';",
+                         "    }",
+                         "    html += '</tr></thead></table>'",
+                         "    return html;",
+                         "  } else {",
+                         "    return '';",
+                         "  }",
+                         "};",
+                         
+                         "var format_datatable = function (d) {",
+                         "  var dataset = [];",
+                         "  var n = d.length - 1;",
+                         "  for (var i = 0; i < d[n].length; i++) {",
+                         "    var datarow = $.map(d[n][i], function (value, index) {",
+                         "      return [value];",
+                         "    });",
+                         "    dataset.push(datarow);",
+                         "  }",
+                         "  var id = 'table#' + childId(d);",
+                         "  var subtable = $(id).DataTable({",
+                         "                     'data': dataset,",
+                         "                     'autoWidth': true,",
+                         "                     'deferRender': true,",
+                         "                     'info': false,",
+                         "                     'lengthChange': true,",
+                         
+                         "                     'ordering': false,",
+                         "                     'order': [],",
+                         "                     'paging': true,",
+                         "                     'scrollX': true,",
+                         "                     'scrollY': true,",
+                         "                     'searching': false,",
+                         "                     'sortClasses': false,",
+                         "                     'columnDefs': [{defaultContent: '',targets: '_all', className: 'dt-center'}]",
+                         # "                      'buttons':['copy','pdf']",
+                         
+                         "                   });",
+                         
+                         "};",
+                         "table.on('click', 'td.details-control-clsf', function () {",
+                         "  var td = $(this),",
+                         "      row = table.row(td.closest('tr'));",
+                         "  if (row.child.isShown()) {",
+                         "    row.child.hide();",
+                         "    td.html('');",
+                         "  } else {",
+                         "    row.child(format(row.data()),'background-color: red;').show();",
+                         
+                         "    td.html('');",
+                         "    format_datatable(row.data());",
+                         "  }",
+                         "});"
+)
+callback_treats <-  DT::JS("table.column(1).nodes().to$().css({cursor: 'pointer'});",
+                           "// Format the nested table into another table",
+                           "var childId = function(d){",
+                           "  var tail = d.slice(2, d.length - 4);",
+                           "  return 'child_' + tail.join('_').replace(/[\\s|\\.|'|,|\\(|\\)]/g, '_');",
+                           "};",
+                           "var format = function (d) {",
+                           "  if (d != null) {",
+                           "    var id = childId(d);",
+                           "    var html = ", 
+                           "          '<table class=\"display compact\" id=\"' + id + '\"><thead><tr>';",
+                           "    for (var key in d[d.length-1][0]) {",
+                           "      html += '<th>' + key + '</th>';",
+                           "    }",
+                           "    html += '</tr></thead></table>'",
+                           "    return html;",
+                           "  } else {",
+                           "    return '';",
+                           "  }",
+                           "};",
+                           
+                           "var format_datatable = function (d) {",
+                           "  var dataset = [];",
+                           "  var n = d.length - 1;",
+                           "  for (var i = 0; i < d[n].length; i++) {",
+                           "    var datarow = $.map(d[n][i], function (value, index) {",
+                           "      return [value];",
+                           "    });",
+                           "    dataset.push(datarow);",
+                           "  }",
+                           "  var id = 'table#' + childId(d);",
+                           "  var subtable = $(id).DataTable({",
+                           "                     'data': dataset,",
+                           "                     'autoWidth': true,",
+                           "                     'deferRender': true,",
+                           "                     'info': false,",
+                           "                     'lengthChange': false,",
+                           "                     'ordering': d[n].length > 1,",
+                           "                     'order': [],",
+                           "                     'paging': false,",
+                           "                     'scrollX': true,",
+                           "                     'scrollY': false,",
+                           "                     'searching': false,",
+                           "                     'sortClasses': false,",
+                           "                     'columnDefs': [{targets: '_all', className: 'dt-center'}]",
+                           # "                      'buttons':['copy','pdf']",
+                           
+                           "                   });",
+                           
+                           "};",
+                           "table.on('click', 'td.details-control-treats', function () {",
+                           "  var td = $(this),",
+                           "      row = table.row(td.closest('tr'));",
+                           "  if (row.child.isShown()) {",
+                           "    row.child.hide();",
+                           "    td.html('');",
+                           "  } else {",
+                           "    row.child(format(row.data()),'background-color: red;').show();",
+                           
+                           "    td.html('');",
+                           "    format_datatable(row.data());",
+                           "  }",
+                           "});"
+)
+
+#key_set("shinymanager-key", "obiwankenobi")
+}
+#prod_indic <- prod_indic[]
+files_full_path <- dir(path_to_user_data, pattern="\\.xlsx$", full.names = TRUE)
+file_names_ <- dir(path_to_user_data,pattern="\\.xlsx$", full.names = FALSE)
+list_main_indication_names <- list()
+for (i in file_names_){
+  ind_name = gsub("\\.xlsx$","",i)
+  ind_name = gsub(" Codes Data", "", ind_name)
+  list_main_indication_names <- append(list_main_indication_names, ind_name)
+}
+
+#prod_indic <- prod_indic[!is.na(prod_indic$`Family Brand Name`),] # deleting rows that contains Nan as product name
+#prod_indic <- prod_indic[!is.na(prod_indic$`Study Etiology - Verbatim`),] # delete rows as they contain Nan for indaction
+
+# chc_prods <- c("Smecta\r\nSmectalia", 
+credentials <- data.frame(
+  user = c("user", "shinymanager"), # mandatory
+  password = c("user", "shinymanager"), # mandatory
+  start = c("2022-08-25"), # optinal (all others)
+  expire = c(NA, NA),
+  admin = c(FALSE, TRUE),
+  comment = "Simple and secure authentification mechanism
+  for single ‘Shiny’ applications.",
+  stringsAsFactors = FALSE
+)
+`%notin%` <- Negate(`%in%`)
+# create_db(
+#   credentials_data = credentials,
+#   sqlite_path = "database.sqlite", # will be created
+#   passphrase = "shinymanager-key"
+#   # passphrase = "passphrase_wihtout_keyring"
+# )
+packages=c("dplyr","DT","shinydashboard","dashboardthemes",
+           "shinyjs","shinyWidgets","stringr","readxl","fresh","readr",
+           "fuzzyjoin","shinyalert","writexl","shinycustomloader")#"shinymanager",
+installed = rownames(installed.packages())
+# ATTENTION path need to be updated according to the machine in wich the code will be excuted
+# When deplying path should become absolute so that the the app runs smoothly on the server
+# Not only thins file should be updated but also all scripts that are being used here for example 
+# athena_data_connection
+# for (pkg in packages) {
+#   if (! pkg %in% installed) {
+#     install.packages(pkg)
+#   }
+# }
+###############################################################################################################
+#####------------------------------- Functions toolbox --------------------####################################
+read_excel_allsheets <- function(filename, tibble = FALSE) {
+  # I prefer straight data.frames
+  # but if you like tidyverse tibbles (the default with read_excel)
+  # then just pass tibble = TRUE
+  sheets <- readxl::excel_sheets(filename)
+  x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X))
+  if(!tibble) x <- lapply(x, as.data.frame)
+  names(x) <- sheets
+  x
+}
+
+compare_frames <- function(df_new,df_old, verbose = TRUE, ret = TRUE, onlynew = FALSE, reverse =FALSE){
+  if(verbose){
+    to_print = list()
+    print("------------------------------------------------------------ ")
+    # Displying rows and columns numbers 
+    to_print <- append(to_print,print(paste(" New data frame  the number of rows is ",nrow(df_new), " the number of columns is ", ncol(df_new)))) 
+    to_print <- append(to_print,print(paste(" Old data frame  the number of rows is ",nrow(df_old), " the number of columns is ", ncol(df_old))))
+    print("------------------------------------------------------------------------------------------------------------------- ")
+    ### Testing if the order of the columns matches between the 2 data
+    if (all(colnames(df_new) == colnames(df_old))){
+      to_print <- append(to_print,print(" column names are the same"))
+    } else {
+      to_print <- append(to_print,print(paste("New dataframe column names are ", paste0(colnames(df_new), collapse = '|'))))
+      to_print <- append(to_print,print(paste("New dataframe column names are ", paste0(colnames(df_old), collapse = '|'))))
+      print("#############")
+      to_print <- append(to_print,print("Need to rearrange the order before joining data"))
+      
+      print("#############")
+      if (all(colnames(df_new) %in% colnames(df_old))){
+        df_new <- df_new[,colnames(df_old)]
+        to_print <- append(to_print,print("Rearanging columns succeded !"))
+      } else {to_print <- append(to_print,print("Please edit the file manually and reapload it"))}
+    }
+    
+    print("------------------------------------------------------------------------------------------------------------------- ")
+    # Displaying the names of columns
+    #to_print <- append(to_print,print(paste("# New data frame column names   ", paste0(colnames(df_new), collapse = " | "))))
+    #to_print <- append(to_print,print(paste("# Old data frame column names   ", paste0(colnames(df_old), collapse = " | "))))
+  }
+  
+  print("")
+  print("------------------------------The differences----------------------------- ")
+  print("")
+  #to_print <- append(to_print,print(dplyr::setdiff(df_new,df_old)))
+  compared_data <- dplyr::setdiff(df_new,df_old)
+  to_print <- append(to_print,print(paste("rows to be added ", nrow(compared_data))))
+  reverse_compared_data <- dplyr::setdiff(df_old,df_new)
+  df_old <- dplyr::setdiff(df_old,reverse_compared_data)
+  to_print <- append(to_print,print(paste("rows to be deleted ", nrow(reverse_compared_data))))
+  if(ret){
+    
+    return(rbind(df_old, compared_data))
+    
+  } else {
+    
+    return(to_print)
+    
+  }
+  if(onlynew & ret){
+    return(compared_data)
+  }
+  if(reverse & ret){
+    return(reverse_compared_data)
+  }
+  
+  
+  
+}
+path_to_user_data <- file.path(adls_base_path,"Ipsen_Code_Library/data_from_users")
+files_full_path <- dir(path_to_user_data, pattern="\\.xlsx$", full.names = TRUE)
+file_names_ <- dir(path_to_user_data,pattern="\\.xlsx$", full.names = FALSE)
+list_main_indication_names <- list()
+for (i in file_names_){
+  ind_name = gsub("\\.xlsx$","",i)
+  ind_name = gsub(" Codes Data", "", ind_name)
+  list_main_indication_names <- append(list_main_indication_names, ind_name)
+}
+# subitems, could be dynamic from user input or database
+# subitems is generic since we ask for harmonized data structure that have diagnosis and treatment sheets
+# mainitem is the main title of the indication section
+# mainitem is based on the data file name that reflects the indication name
+data_subitems <- c("Treatment", "Diagnosis")
+data_mainitem <- list_main_indication_names
+# to run this in localhost and share it within the network 
+# runApp('Ipsen_Code_Library', host='0.0.0.0', port=8889)
+source("theme_diy.R")
+
+#source('athena_data_connection.R')
+library(jsonlite)
+suppressPackageStartupMessages(library(shiny))
+library(crosstalk)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(shinydashboard))
+suppressPackageStartupMessages(library(dashboardthemes))
+suppressPackageStartupMessages(library(shinyjs))
+suppressPackageStartupMessages(library(shinyWidgets))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(fresh))
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(fuzzyjoin))
+
+suppressPackageStartupMessages(library(shinyalert))
+suppressPackageStartupMessages(library(writexl))
+suppressPackageStartupMessages(library(shinycustomloader))
+library(glue)
+library(openxlsx)
+#options(shiny.host='0.0.0.0',shiny.port=3838)#,shiny.port = 5050
+#setwd(rstudioapi::getActiveProject())
+css <- "
+.nowrap {
+  white-space: nowrap;
+}"
+######################################################################################################################################################
+############ ----------------------------------------- Scheduling tasks for getting ndc codes ----------------------------##################      
+######################################################################################################################################################
+
+
+############# crawler for collecting the NDC atomic data and and updates the old ones
+############# excuting and scheduling the python script
+
+# python_crawler_ndc_task_script <- paste0(rstudioapi::getActiveProject(),"/python_tasks/ndc_scraper_.R")
+# 
+# tryCatch(
+#   expr = {
+#     taskscheduler_delete(taskname = "crawlerndcscriptdaily")
+#   },
+#   error = function(e){
+#     message('Caught an error!')
+#     print(e)
+#   },
+#   warning = function(w){
+#     message('Caught a warning!')
+#     print(w)
+#   },
+#   finally = {
+#     message('All done, quitting.')
+#   })
+# 
+# 
+# taskscheduler_create(taskname = "crawlerndcscriptdaily",
+#                      rscript = python_crawler_ndc_task_script,
+#                      schedule = "DAILY",
+#                      starttime = "11:30",
+#                      startdate = format(Sys.Date(), "%d/%m/%Y"))
+
+###################################################################################################################
+###################################################################################################################
+############ updates the data for ndc codes 
+# ndc_task_script <- paste0(rstudioapi::getActiveProject(),"/tasks/task_ndc.R")
+# tryCatch(
+#   expr = {
+#     taskscheduler_delete(taskname = "ndctaskscriptdaily")
+#   },
+#   error = function(e){
+#     message('Caught an error!')
+#     print(e)
+#   },
+#   warning = function(w){
+#     message('Caught an warning!')
+#     print(w)
+#   },
+#   finally = {
+#     message('All done, quitting.')
+#   })
+# 
+# 
+# taskscheduler_create(taskname = "myfancyscriptdaily",
+#                      rscript = ndc_task_script,
+#                      schedule = "DAILY",
+#                      starttime = "17:00",
+#                      startdate = format(Sys.Date(), "%d/%m/%Y"))
+
+######################################################################################################################################################
+################################################ END scheduling ###########################################################################
+######################################################################################################################################################
+
+######################################################################################################################################################
+#############################################--- last update of databases infos ---###########################################################
+
+fileName <- file.path(adls_base_path,"python_tasks/ndc_scraper_.log")
+txt = readChar(fileName, file.info(fileName)$size)
+dates = unlist(stringr::str_extract_all(txt, "\\d+:\\d+:\\d+\\s+\\d+-\\d+-\\d+"))
+updated_ndc_date = as.character(dates[length(dates)])
+
+########################################################################################################
+######################################################################################################################################################
+
+
+metadata <- read_json(file.path(adls_base_path,"Ipsen_Code_Library/spasticity_treatments.json"), simplifyVector = TRUE)
+metadata <- fromJSON(metadata)
+
+####
+
+
+metadata$Code_type <- as.factor(metadata$Code_type)
+
+#metadata <- metadata[,-]
+#metadata <- subset(metadata, select = -c(Treatment))
+
+#metadata$Treatment <- as.factor(metadata$Treatment)
+
+metadata_a <- read_json(file.path(adls_base_path,"Ipsen_Code_Library/spasticity_diagnoses.json"),simplifyVector = TRUE)
+metadata_a <- fromJSON(metadata_a)
+
+metadata_a <- metadata_a %>% rename(Spasticity = "Spasticity broad label",
+                                    Code = "ICD10 codes", Etiology = Indication) # At first the column was named ICD10_codes
+metadata_a <- metadata_a %>% tibble::add_column(Code_type= "ICD10", .after = "Etiology")
+
+metadata_a$Spasticity[is.na(metadata_a$Spasticity)] <- "Unspecified"
+
+metadata_a$Spasticity <- as.factor(metadata_a$Spasticity)
+metadata_a$Etiology <- as.factor(metadata_a$Etiology)
+
+prod_indic <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/ipsen/All_studies.csv"), show_col_types = FALSE)
+prod_indic <- prod_indic[("Lung and Thyroid Cancer" != prod_indic$`Study Indication - Verbatim`),]
+prod_indic <- prod_indic[,-2]
+ta_indic <- pairlist()
+files_new_names <- list()
+
+for (i in files_full_path){
+  dataframe = read_excel(i)
+  couple = c(names(dataframe)[4], dataframe[1,c(4)][[1]])
+  files_new_names = append(files_new_names, dataframe[1,c(4)][[1]])
+  ta_indic = append(ta_indic, pairlist(couple))
+}
+for (filename in Map(c,files_new_names,files_full_path)){
+  print(filename[2])
+  print(filename[1])
+  if(file.exists(filename[2])){
+    # Rename file name
+    
+    file.rename(filename[2],file.path(adls_base_path,"Ipsen_Code_Library/data_from_users/",paste0(filename[1],".xlsx")))
+    print("file renaming succed !")
+  }else{
+    print('File Not found :')
+    
+  }
+}
+
+for (i in 1:length(ta_indic)){
+  prod_indic <- rbind(prod_indic,ta_indic[[i]])
+#               "Tanakan", 
+#               "Ginkor Fort" ,
+#               "Fortrans" ,
+#               "Forlax" , 
+#               "Eziclen   Izinova",
+#               "NA")
+# prod_indic <- prod_indic[- grep(paste(chc_prods,collapse = '|'), prod_indic$`Family Brand Name`),]
+# 
+# ta_prod <- read_csv(file.path("ipsen","ta_prod.csv"), show_col_types = FALSE)
+
+#prod_indic <- prod_indic %>% regex_inner_join(ta_prod, by = c(`Family Brand Name` = "therapeutic_area"))
+
+icd_data_down <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/ath_codes/ICD10_codes/icd_data_clean.csv"),
+                          col_types = cols(valid_start_date = col_date(format = "%Y-%m-%d"),
+                                           valid_end_date = col_date(format = "%Y-%m-%d")))
+icd9_data_down <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/ath_codes/ICD9_codes/icd9_data_clean.csv"), 
+                           col_types = cols(valid_start_date = col_date(format = "%Y-%m-%d"),
+                                            valid_end_date = col_date(format = "%Y-%m-%d")))
+icdo3_data_down <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/ath_codes/ICDO3/icdo3_data_clean.csv"), 
+                            col_types = cols(valid_start_date = col_date(format = "%Y-%m-%d"),
+                                             valid_end_date = col_date(format = "%Y-%m-%d")))
+# reading coding data
+
+cpt_data <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/ath_codes/cpt_data/cpt_data_clean.csv"), 
+                     col_types = cols(valid_start_date = col_date(format = "%Y-%m-%d"),
+                                      valid_end_date = col_date(format = "%Y-%m-%d")))
+hcpcs_data <- read_excel(file.path(adls_base_path,"Ipsen_Code_Library/ipsen/HCPC2020_TRANS_ALPHA_w_disclaimer.xlsx"))
+
+hcpcs_data <- hcpcs_data %>% rename(Code = "HCPC/MOD")
+
+dataframe_ndc <- read_csv(file.path(adls_base_path,"Ipsen_Code_Library/Scrapper/Collected_data/dataframe_ndc.csv"), 
+                          col_types = cols(packaging_marketing_start_date = col_date(format = "%Y%m%d"), 
+                                           listing_expiration_date = col_date(format = "%Y%m%d"), 
+                                           marketing_start_date = col_date(format = "%Y%m%d")))
+nsclc <- read_excel(file.path(adls_base_path,"Ipsen_Code_Library/ipsen/20220318-Feasibility THIN Cegedim - Cancer.xlsx"), sheet = "NSCLC")
+nsclc[sapply(nsclc, is.character)] <- lapply(nsclc[sapply(nsclc, is.character)], 
+                                             as.factor)
+t_cancer <- read_excel(file.path(adls_base_path,"Ipsen_Code_Library/ipsen/20220318-Feasibility THIN Cegedim - Cancer.xlsx"), sheet = "Thyroid cancer")
+t_cancer[sapply(t_cancer, is.character)] <- lapply(t_cancer[sapply(t_cancer, is.character)], 
+                                                   as.factor)
+
+# 
+# 
+# 
+# 
+
+
+
+
+
+choice_indications = unique(as.character(prod_indic$`Study Indication - Verbatim`))
+# javascript code to collapse box
+jscode <- "shinyjs.collapse = function(boxid) { $('#' + boxid).closest('.box').find('[data-widget=collapse]').click();}"
+js_menu_selector <- "shinyjs.open_item = function(data-value-id) {document.querySelector('[data-value=data-value-id]').click()}"
+sidebar <- dashboardSidebar(
+  useShinyjs(),
+  tags$style(
+    "#sidebarItemExpanded {
+            overflow: auto;
+            max-height: 100vh;
+    }
+.panel-auth {
+    display: none;
+    }"
+  ),
+  sidebarMenu(id="sidebar",
+              
+              menuItem(" Home", tabName = "Home", icon = tags$i(class = "fa fa-house-user")),
+              menuItem(" Download  code references ", tabName = "Sdownloads", icon = icon("download")),
+              
+              uiOutput("admin_tab"),
+              menuItemOutput("codes_tabs"),#menuItemOutput("codes_tab_spasticity"),
+              menuItemOutput("codes_tab_lung"),
+              menuItemOutput("codes_tab_thyroid"),
+              menuItemOutput("codes_all_users"),
+              
+              menuItem("Support", tabName = "SUPP", icon = icon("question-circle"))
+              
+              
+              
+  )
+)
+
+###############################################################################################################################
+
+###############################################################################################################################
+
+###############################################################################################################################
+
+#######################################---------------Body--------------------################################################
+
+body <- dashboardBody(
+  useShinyjs(),
+  shinyjs::extendShinyjs(text = jscode, functions = c("collapse")),
+  shinyjs::extendShinyjs(text = js_menu_selector, functions = c("open_item")),
+  
+  theme_purple_gradient,
+  
+  #customize color of top bar and other stuff ;) Cool CSS styling
+  tags$head(tags$link(rel = "shortcut icon", href = "favicon.ico")),
+  tags$head(tags$style(HTML('
+element.style {
+    /* display: none; */
+}
+.panel-auth {
+    display: none;
+}
+                                #MT table {table-layout: fixed;}
+                                .skin-black .main-header .logo {
+                                background-color: #C0C0C0;
+                                color: white;
+                                }
+                                
+                      
+                                .skin-black .main-header .logo:hover {
+                                background-color: #C0C0C0;
+                                }
+                                
+                                .skin-black .main-header .navbar>.sidebar-toggle{
+                                color: white;
+                                }
+                                .sidebar {
+                                overflow-x: hidden;
+                                overflow-y: hidden;
+                                position: fixed;
+                                
+                                }
+
+                                .skin-black .main-header .navbar {
+                                background-color: #C0C0C0;
+                                
+                                }
+                                
+                                .shiny-notification-warning {
+                                position:fixed;
+                                top: 19%;
+                                left: 46.7%;
+                                background-color: #deac7ab5;
+                                color: #FFFFFF;
+                                padding: 18table-layout: fixed;;
+                                width: 589table-layout: fixed;;
+                                z-index: 99999;
+                                }
+                                
+                                .shiny-notification-close{
+                                color: #0059ff;
+                                background-color: #ffea00a5;
+                                font-size: 20px;
+                                bottom: 9px;
+                                position: relative;
+                                padding-left: 2px;
+                                }
+                                
+                                .shiny-notification-error{
+                                position:fixed;
+                                top: 78%;
+                                left: 56.7%;
+                                background-color: #F04B4BB5;
+                                color: #fff200;
+                                font-size: 17px;
+                                font-weight: bold;
+                                padding: 19px;
+                                width: 799px;
+                                z-index: 99999;
+                                }
+                                
+                                .sweet-alert{
+                                background-color:transparent !important;
+                                }
+                                
+                                .shiny-output-error-validation {
+                                color: #e37617;
+                                text-align:center;
+                                padding:0px !important;
+                                font-size:17px !important;
+                                line-height: 0;
+                                }
+                               #tree2{
+                               
+                               overflow-y:scroll; max-height: 150px;
+                               }
+                               .input-group-btn .btn{
+                               background: #29a8d0 !important;
+                               color: #deac7a !important;
+                               border-radius: 20px 20px 20px 20px !important;
+                               border-style: solid solid solid solid !important;
+                               border-color: #deac7a !important;
+                               width: 100px;
+                               
+                               }
+                               .input-group .form-control {
+                                    position: relative;
+                                    z-index: 2;
+                                    float: left;
+                                    width: 98%;
+                                    margin-bottom: 0;
+                                    margin-left: 2%;
+                               }
+                                
+                               #downloadengine_text{
+                               width: 450px;
+                               margin-left: 85px;
+                               margin-right:50px;
+                               }
+                               #downloadengine_reset{
+                               margin-right:12px !important;
+                               left: 53%;
+                               }
+                               #downloadengine_search{
+                               right: 53%;
+                               }
+                               #downloadengine{
+                               margin-bottom:53px;
+                               }
+                               #data_to_download .dataTables_filter{
+                               display:none;
+                               }
+                               .filter-option-inner-inner{
+                               text-align:center;
+                               }
+                               .fa-plus {
+                               color:greenyellow;
+                               }
+                               
+                               .fa-minus {
+                               color:greenyellow;
+                               }
+                               .nav-tabs-custom .nav-tabs li.active {
+                               border-bottom-color: rgb(318,98,84);
+                               border-top-color: rgb(318,98,84);
+                               border-right-color: rgb(318,98,84);
+                               border-left-color: rgb(318,98,84);
+                               color: rgb(427,174,84);
+                               font-size: 14px;
+                               border-radius: 15px;
+                               }
+                                
+                                    
+
+                                }'))),
+  tags$style( # change from deafult  CSS styling
+    ".nav-tabs-custom .nav-tabs  li.active  {
+                                            border-top-color: #C0C0C0;
+                                        }
+                        .dataTables_wrapper .dataTables_processing .dataTables_scroll{
+                        table-layout: fixed;
+                               position: sticky;
+                               top: 5%;
+                                left: 20%;
+                                width: 100%;
+                                height: 80px;
+                                margin-left: -0%;
+                                margin-top: -25px;
+                                padding-top: 20px;
+                                text-align: center;
+                                font-size: 2.2em;
+                                background-color: white;
+                              background: linear-gradient(to right, rgba(0, 255, 255, 0) 0%, rgba(215, 247, 247, 0.9) 25%, rgba(240, 209, 173, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+                               }"),
+  
+  tags$script(
+    HTML("$('body').addClass('sidebar-mini');
+                                       ")),
+  
+  
+  
+  
+  tags$style(HTML('table.dataTable tr.selected td, table.dataTable td.selected {background-color: #deac7a !important;color:#003b72 !important;font-size:18px}
+                      table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover {background-color: #80B1DD !important;color: #80B1DD !important;}
+                      .table-hover>tbody>tr:hover {background-color:#80B1DD !important;}
+                      .odd {background-color : #ebebeb ;}
+                      .even {background-color : #ebebeb ;}
+                                      td {font-size:15px;color: #FFFFFF !important;}')),
+  
+  #---------------Support--------------------#
+  
+  
+  tabItems(
+    tabItem(tabName = "SUPP",
+            
+            
+            fluidRow(
+              HTML("<h3 style='color:White;'><left><b> &nbsp&nbsp&nbspICL Support Team </b></left></h3>"),
+              box(
+                title = "Contact us", width = 12, solidHeader = TRUE,status ="success",
+                p("Need assistance?"),
+                br(),
+                p("Send email to ICL support team:  datainsights@ipsen.com"),
+              )
+            ),
+            
+            fluidRow(
+              HTML ("<h3 style='color:White;'><left><b> &nbsp&nbsp&nbspContributing to ICL </b></left></h3>"),
+              box(
+                title = "Send Code Lists",
+                width = 12, 
+                solidHeader = TRUE,
+                collapsible = TRUE,
+                collapsed=FALSE,
+                status ="success",
+                
+                
+                p("Do you wish to submit code lists to be added to ICL?", style = ("color:White")),
+                p("Follow the steps below:"),
+                br(),
+                p("1. Download template:", style = "color:White"),
+                p("Codes data template is disgned for the use of this knowledge center are unified."), 
+                p("We encourage the creation of code lists with respect to the provided structures in the template."), 
+                p("The only requirements of the code list are:"),
+                p("- The data file should be named based on the indication name. For example Thyroid Cancer is the name for all codes related to that"),
+                p("- It must contain at least one tab filled with data such as Treatment or diagnosis'"),
+                p("- In the first summary sheet the name of the disease is required'"),
+                br(),
+                tags$style(type="text/css", "#downloadtemplate {background-color:SteelBlue;color: white} 
+                                    #downloadtemplate:hover{background-color:#f5a352d4;transition: 0.8s;box-shadow: 0 0 0 7px #caba7e;}
+                                               #downloadtemplate:active{background-color: #ffbf00;}"),
+                tags$style(type='text/css', "#downloadtemplate {width:35%; margin-left: 10px;}"),
+                div(style="display:inline-block", downloadButton(outputId='downloadtemplate', label='Download template'), style="display:center-align")
+                ,br(),br(),
+                p("2. Send email to ICL support team datainsights@ipsen.com with code list as attachment", style = "color:White"),
+                p("Please, send the fill out the following information about the code list(s) you are submitting as part of your email."),
+                p("Information and details can be found within the Excel template file."),
+                br(),
+                p("Name of file attached:"),
+                p("a. Disease or indication name:"),
+                br(),br(),
+                p("We value your feedback, please send us an email with your thoughts at datainsights@ipsen.com"),
+                p("Thank you!")
+              )
+            )
+            
+    ),
+    # ----------------------------------------- Admin page ----------------------------##################      
+    tabItem(
+      tabName = "adminin","Welcome on the admin page! upload new data",
+      box(fluidRow(
+        h3(" This is the admin section "),
+        box(fileInput("file1","Choose Excel File",
+                      multiple = TRUE,
+                      accept = c("Excel",
+                                 ".xlsx")),width = 12,solidHeader = TRUE, height = 75),
+        
+        box(checkboxInput("multiplefilecheck", "Uploading multiple files",TRUE),
+            width = 3,solidHeader = TRUE, height = 50),
+        box(actionButton('apply_updates', 'Apply uploads', icon = icon("hand-point-right")),
+            width = 3,solidHeader = TRUE, height = 50),
+        box(p("_________") , p("Click on Apply changes ONLY when you are done uploading all the data."),
+            width = 12,solidHeader = TRUE, height = 50)
+      ), width = 12, height = 255),
+      
+      fluidRow(
+        
+        # uiOutput("mycontent")# create dynamic tabs based on uploaded files from users
+        # the target output is reading each file and creates the associated tabs for it
+        
+      ),
+      fluidRow( box(
+        
+        solidHeader = F,
+        width = 12,
+        #height = 105,
+        collapsible = T,
+        
+        status="info",
+        h2(verbatimTextOutput("upload_messages"),style="display:center-align")
+        
+      )
+      
+      ,box(solidHeader = F,
+           width = 12,
+           #height = 105,
+           collapsible = T,
+           
+           status="info",
+           title = "Summary data",
+           DT::dataTableOutput("summary_data")),
+      box(solidHeader = F,
+          width = 12,
+          #height = 105,
+          collapsible = T,
+          h4(textOutput("title_treatments")),
+          DT::dataTableOutput("treatments_data"))#,
+      # box(solidHeader = F,
+      #     width = 12,
+      #     #height = 105,
+      #     collapsible = T,
+      #     h4(textOutput("title_diagnosis")),
+      #      DT::dataTableOutput("diagnosis_data")
+      #      )
+      )
+    ),
+    
+    #---------------Home page--------------------#
+    tabItem(tabName = "Home",
+            
+            headerPanel(HTML("<center><h3 style='color:FFFFF;'><left><b> Welcome to IPSEN code library! </b></left></h3></center>")),
+            
+            fluidRow(
+              box(
+                solidHeader = T,
+                width = 5,
+                selected = "Info",
+                collapsible = T,
+                collapsed = T,
+                title = tagList(shiny::icon("info-circle", verify_fa=FALSE), "  Help"),
+                
+                
+                tabPanel("Info",
+                         fluidRow(HTML("<center><h4 style='color:#eb863d;font-size:15px;'><left> IPSEN internal project developed by GMA team- <br> <span></span></left></h4></center>"),
+                                  column(11, actionButton('help', 'Help'), align="center",style = "margin-bottom: 10px;",
+                                         style = "margin-top: 10px;")),
+                         fluidRow(
+                           column(width = 7, textOutput( "instructions" )),
+                           column(width = 12, align = "center",
+                                  img(src="data_extraction.png",
+                                      height=300))
+                         )
+                         
+                         
+                         
+                ))),   
+            fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                height = 15,
+                collapsible = F,
+                
+                status="info"
+              )
+            ),
+            
+            
+            
+            
+            fluidRow(
+              
+              column(4,align="left",  offset = 2,style='padding-bottom: 4px', 
+                     pickerInput(inputId = "selected_ta",
+                                 label = "Select TA",
+                                 multiple = TRUE,
+                                 options = pickerOptions(
+                                   actionsBox = TRUE,
+                                   selectedTextFormat = 'count',
+                                   maxOptions = 1,
+                                   countSelectedText = "{0}/{1} selected"),#,liveSearch = TRUE
+                                 choices = unique(as.character(prod_indic$therapeutic_area)),
+                                 selected = NULL)
+                     
+              ),
+              column(3,align="left",  offset = 0,style='padding-bottom: 4px',
+                     pickerInput(inputId = "selected_ind",
+                                 label = "Select indication",
+                                 multiple = TRUE,
+                                 options = pickerOptions(
+                                   actionsBox = TRUE,
+                                   selectedTextFormat = 'count',
+                                   maxOptions = 1,
+                                   countSelectedText = "{0}/{1} selected", liveSearch = TRUE,size = 15),
+                                 choices = choice_indications,
+                                 choicesOpt = list(stringr::str_trunc(choice_indications, width = 9)),
+                                 selected = NULL
+                     )
+                     
+              )
+            ),
+            fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                height = 10,
+                collapsible = F,
+                collapsed = F,
+                
+              )
+            ),
+            
+            fluidRow(
+              
+              # column(6, align="right", offset = 2,style='padding-bottom: 4px', 
+              #        actionButton('select_resources', 'Browse resources ', icon = icon("hand-point-right")),
+              #        tags$style(type='text/css', "#select_resources { width:100%; bottom-margin = 5px; text-align:center; font-size: 15px; display: block;}")
+              #        
+              # )#,
+              
+              # column(3, align="right", offset = 0,style='padding-bottom: 4px', 
+              #        
+              #        actionButton('reset_resources', 'Reset filters', icon = icon("undo-alt", verify_fa=FALSE)),
+              #        tags$style(type='text/css', "#reset_resources { width:100%; bottom-margin = 5px; text-align:center; font-size: 15px; display: block;}")
+              #        
+              # )
+            ),fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                height = 10,
+                collapsible = F,
+                collapsed = F,
+                
+              )
+            )
+            # fluidRow(
+            # column(5, align="right", offset = 3,style='padding-bottom: 4px', 
+            #        actionButton('browse_all', ' Browse all ', icon = tags$i(class = "fa-solid fa-search fa-flip-horizontal")),
+            #        tags$style(type='text/css', "#browse_all { width:100%; bottom-margin = 5px; text-align:center; font-size: 15px; display: block; background-color:#e1e2e6;}")
+            #        
+            # )),
+            
+            
+            
+            
+            
+    ),
+    #---------------Search and download tab--------
+    tabItem(tabName = "Sdownloads",
+            
+            
+            
+            fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                height = 15,
+                collapsible = F,
+                
+                status="info"
+              )
+            ),
+            tabBox(
+              side = "right",
+              width = 12,
+              title = tagList(shiny::icon("rectangle-list"), " "),
+              id = "Btabox_home",
+              selected = "Download",
+              
+              
+              tabPanel(
+                "Download",
+                width = 145,
+                fluidRow(box(
+                  solidHeader = F,
+                  width = 12,
+                  collapsible = F
+                )),
+                fluidRow(
+                  fluidRow(
+                    column(12,
+                           pickerInput("datanames", "Select the code type you want to download:",
+                                       choices=c("CPT","HCPCS","NDC","ICD10","ICD9", "ICD-O-3"),
+                                       selected = "CPT")
+                    ), align = "center",
+                    tags$style(type="text/css", "#downloadcode {background-color:SteelBlue;color: white}"),
+                    tags$style(type='text/css', "#downloadcode {width:35%; margin-left: 10px;}"),
+                    div(style="display:inline-block", downloadButton(outputId='downloadcode', label='Download code data'), style="display:center-align")
+                  )),
+                fluidRow(
+                  
+                  column(12, HTML("<br> <left>_________________________________________________________________________________________________</left><br> 
+                                                     <left> Please consider selecting a code type first. Afterwards, you can search within the data. CPT is selected by default</left>"),
+                         align="right",style = "margin-bottom: 10px;",
+                         style = "margin-top: 10px;"))
+              )
+            ),fluidRow(
+              box(
+                solidHeader = T,
+                width = 12,
+                selected = "Info",
+                collapsible = T,
+                collapsed = F,
+                title = tagList(shiny::icon("info-circle", verify_fa=FALSE), "  Overview of data to download"),
+                
+                
+                tabPanel("search and download",
+                         fluidRow(
+                           
+                           column(11, HTML(paste("This is an overview of the data you want to download",
+                                                 " ",
+                                                 textOutput("selected_dataname"))),
+                                  align="center",style = "margin-bottom: 10px;",
+                                  style = "margin-top: 10px;")),
+                         fluidRow(
+                           fluidRow(
+                             column(11,
+                                    searchInput(
+                                      inputId = "downloadengine", label = "What are we looking for ?",
+                                      placeholder = "Type a code or a key word. Hit enter to display search results.",
+                                      
+                                      btnReset = icon("xmark"),btnSearch = icon("magnifying-glass"),
+                                      
+                                      width = "590px"
+                                    ),align="center"
+                             ), align = "left"  
+                           ))
+                         
+                         
+                         
+                ),fluidRow(
+                  box(
+                    solidHeader = F,
+                    width = 12,
+                    
+                    collapsible = F,
+                    collapsed = F,
+                    column(12,align="left",  offset = 0,style='padding-bottom: 4px', 
+                           withLoader(uiOutput(outputId = "search_download"), type="html", loader="dnaspin")) 
+                  )
+                )
+                
+              ))
+            
+            ,fluidRow(box(
+              solidHeader = T,
+              width = 12,
+              collapsible = F
+            ))
+            
+    )),
+  
+  useShinyjs(),
+  
+  tabItems(
+    
+    
+    uiOutput("spas"),
+    uiOutput("luca"),
+    
+    ###,#######,,,,,,,,,,,,,,####,,,,,,,,,,,#########
+    ############
+    ############################ thyroid cancer and other stuff
+    tabItem(tabName = "thyroid_treat",
+            fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                collapsible = F
+              )
+            ),
+            
+            tabBox(
+              side = "right",
+              width = 12,
+              title = tagList(shiny::icon("rectangle-list"), "Browse thyroid cancer treatments codes"),
+              id = "Btabox",
+              selected = "Data", 
+              
+              
+              
+              tabPanel("Data",
+                       
+                       fluidRow(
+                         
+                         column(2
+                         )
+                         
+                       ),
+                       
+                       fluidRow(
+                         
+                         column(4
+                         ),
+                         
+                         column(4
+                         )
+                       ),
+                       
+                       fluidRow(
+                         box(
+                           solidHeader = T,
+                           width = 12,
+                           collapsible = F,
+                           #diplaying metadata
+                           div(DT::DTOutput("thyroid_treat_data"), style = "font-size: 100%;")
+                         )
+                       )
+                       
+              )
+              
+            ),
+            
+            
+            fluidRow(
+              box(
+                solidHeader = T,
+                width = 12,
+                collapsible = F,
+                
+              )
+            )
+            
+            
+            
+            
+    ),
+    #############################################################
+    #############################################################
+    
+    ## to display when browse_all button is pressed
+    
+    uiOutput("user_content")# create dynamic tabs based on uploaded files from users
+    # forget the first comment for dynamic tabs this a par of the data that generate the 
+    #
+    ,
+    # tabItem(
+    #   tabName = "codes_all_users",
+    #   
+    #   
+    #     
+    #     
+    #   fluidRow( box(
+    #     
+    #     solidHeader = F,
+    #     width = 12,
+    #     height = 105,
+    #     collapsible = F,
+    #     
+    #     status="info",
+    #   )
+    #   
+    #   )),
+    ############################ Thyroid cancer
+    tabItem(tabName = "thyroid_diag",
+            fluidRow(
+              box(
+                solidHeader = F,
+                width = 12,
+                collapsible = F
+              )
+            ),
+            
+            tabBox(
+              side = "right",
+              width = 12,
+              title = tagList(shiny::icon("rectangle-list"), "Browse Thyroid cancer codes"),
+              id = "Btabox",
+              selected = "Data", 
+              
+              
+              
+              tabPanel("Data",
+                       
+                       fluidRow(
+                         
+                         column(2,
+                                
+                                pickerInput("Country1",
+                                            "Country:",
+                                            multiple = TRUE,
+                                            options = pickerOptions(
+                                              actionsBox = TRUE,
+                                              selectedTextFormat = 'count',
+                                              countSelectedText = "{0}/{1} selected"), 
+                                            c(
+                                              unique(as.character(t_cancer$COUNTRY))),
+                                            selected = unique(as.character(t_cancer$COUNTRY)))
+                         )
+                         
+                       ),
+                       
+                       fluidRow(
+                         
+                         column(4, align="right", offset = 2,style='padding-bottom: 4px', 
+                                actionButton('select_country1', 'Display', icon = icon("hand-point-right")),
+                                tags$style(type='text/css', "#select_country1 { width:50%; bottom-margin = 5px; text-align:center; font-size: 15px; display: block;}")
+                                
+                         ),
+                         
+                         column(4, align="left", offset = -1,style='padding-bottom: 4px', 
+                                column(3, align="center", offset = 0,style='padding-bottom: 4px',
+                                       actionButton('reset_country1', 'Reset', icon = icon("undo-alt", verify_fa=FALSE)),
+                                       tags$style(type='text/css', "#reset_country1 { width:250%; bottom-margin = 5px; text-align:center; display: block;}")
+                                )
+                         )
+                       ),
+                       
+                       fluidRow(
+                         box(
+                           solidHeader = T,
+                           width = 12,
+                           collapsible = F,
+                           #diplaying metadata for thyroid cancer
+                           div(DT::DTOutput("thy_cancer"), style = "font-size: 100%;")
+                         )
+                       )
+                       
+              )
+            ),
+            
+            
+            fluidRow(
+              box(
+                solidHeader = T,
+                width = 12,
+                collapsible = F,
+                
+              )
+            )
+            
+            
+            
+            
+    )
+    
+  ),
+  fluidRow(
+    box(
+      solidHeader = T,
+      width = 12,
+      collapsible = F,
+      
+    )
+  ),
+  tags$footer(" IPSEN Code Library - ICL \U00AE", title="Your footer here", align = "left", style = "position:absolute;bottom:s%;left:120;width:100%;height:20px; color:cfa974;font-size: 100%;")
+)
+
+
+###############################################################################################################################
+
+###############################################################################################################################
+
+###############################################################################################################################
+
+############------------------------------------------***** UI function *****------------------------------ ###################  
+
+ui <- dashboardPage(
+  skin = "blue",
+  
+  #tags$head(tags$link(rel="shortcut icon", href="https://www.ipsen.com/wp-content/themes/ipsen-master/favicon.ico")),
+  title="Ipsen Code Library",
+  
+  dashboardHeader(title = tagList(
+    
+    tags$span(
+      class = "logo-mini", "ICL"
+    ),
+    tags$span(
+      class = "logo-lg", "IPSEN Code Library"
+    )
+  )#,
+  # tags$li(class="dropdown",img(src = "Ipsen_logo.png",align = "left",height='50px',title = "IPSEN logo"))
+  ),
+  #tags$head(tags$link(rel = "shortcut icon", href = "favicon.ico")),
+  sidebar,
+  body
+)
+
+ui <- secure_app(ui,
+                 tags_top = tags$div(
+                   tags$head(tags$style(HTML('
+element.style {
+    /* display: none; */
+}
+#auth-auth-mod {
+    display: none;
+}'))),
+                   tags$head(tags$link(rel = "shortcut icon", href = "favicon.ico")),
+                   tags$h5("Welcome to Ipsen Code Library authentification portal.", style = "align:center"),
+                   tags$script(
+                     HTML('setTimeout(function(){document.getElementById("auth-user_id").value="shinymanager";
+                         document.getElementById("auth-user_pwd").value="shinymanager";
+                         },1);
+                         setTimeout(function(){document.getElementById("auth-go_auth").click()},10)
+                 '))),
+
+
+                 tags_bottom = tags$div(
+                   #tags$script(HTML('setTimeout(document.getElementById("auth-go_auth").click(),3000)')),
+                   tags$p(
+                     "For any question, please  contact ",
+                     tags$a(
+                       href = "mailto:datainsights@ipsen.com?Subject=Shiny%20aManager",
+                       target="_top", "administrator"
+                     )
+                   ),
+                   tags$p("To login use this credentials;"),
+                   tags$li(" username: user ")
+                   ,tags$li(" password: user")
+
+                 ),
+                 choose_language = TRUE, enable_admin = TRUE)#, theme = bslib::bs_theme(version = 4), bootswatch = "superhero"
+################################################################################################################
+###############
+
+###############################################################################################################################
+
+###############################################################################################################################
+
+############ -----------------------------------------***** SERVER function *****----------------------------################## 
+
+server <- function(input, output, session) {
+  res_auth <- secure_server(
+    check_credentials = check_credentials(
+      "database.sqlite",
+      passphrase = "shinymanager-key"
+    )
+    ,keep_token=T
+  )
+  # commented this only for deploying only because this app is developed under Windows OS while he deployment server is Ubuntu Linux
+  # 
+  # ------------------ App virtualenv setup (Do not edit) ------------------- #
+  # virtualenv_dir = Sys.getenv('VIRTUALENV_NAME')
+  # python_path = Sys.getenv('PYTHON_PATH')
+  # ###--- Install dependencies ---####
+  # #reticulate::conda_install(virtualenv_dir, packages = PYTHON_DEPENDENCIES, ignore_installed=TRUE)
+  # reticulate::use_condaenv("base")
+  
+  ###--- App server logic ---###
+  #reticulate::source_python('python_functions.py')
+  
+  # Import python functions to be used to get code details when it's not available in our database
+  #reticulate::source_python(file.path("C:/Users/feh33996/OneDrive - Groupe IPSEN/Documents/ICL/Ipsen_Code_Library/Scrapper","sc.py"))
+  
+  
+  
+  # output$dynamicInputHome2 <- renderUI({
+  #   
+  #   # This input exists if the `Product`
+  #   # one is equal to one of products only
+  #   if (any(input$selected_ta %in% unique(as.character(prod_indic$therapeutic_area)))) {
+  #     if(length(unique(as.character(as.character(prod_indic[prod_indic$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`)))) > 1){
+  #     
+  #     pickerInput(inputId = "selected_ind",
+  #                 label = "Select indication",
+  #                 multiple = TRUE,
+  #                 options = pickerOptions(
+  #                   actionsBox = TRUE,
+  #                   selectedTextFormat = 'count',
+  #                   maxOptions = 1,
+  #                   countSelectedText = "{0}/{1} selected", liveSearch = TRUE,size = 15),
+  #                 choices = choice_indications,
+  #                 choicesOpt = list(stringr::str_trunc(choice_indications, width = 9)),
+  #                 selected = NULL#c("Spasticity")
+  #                 )
+  #     } else if(length(unique(as.character(prod_indic[prod_indic$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`))) == 1){
+  #       print("Only one indication is available for this product")
+  #       
+  #       pickerInput(inputId = "selected_ind",
+  #                   label = "Select indication",
+  #                   multiple = TRUE,
+  #                   options = pickerOptions(
+  #                     actionsBox = TRUE,
+  #                     selectedTextFormat = 'count',
+  #                     maxOptions = 1,
+  #                     countSelectedText = "{0}/{1} selected", liveSearch = TRUE,size = 15),
+  #                   choices = choice_indications,
+  #                   #choicesOpt = list(stringr::str_trunc(choice_indications, width = 9)),
+  #                   selected = unique(prod_indic[prod_indic$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`)#NULL#c("Spasticity")
+  #       )
+  #     }
+  #     
+  #   } else {
+  #     return(NULL)
+  #   }
+  #   
+  # })
+  
+  #############################################################################################
+  
+  ########################### Dynamic outputs based on uploaded data from users ##############
+  ############################################################################################
+  # Admin tab
+  output$admin_tab <- renderUI({
+    #reactiveValuesToList(res_auth)$user = "shinymanager"
+    if (reactiveValuesToList(res_auth)$user == "shinymanager"){
+      print("admin logged in")
+      sidebarMenu(id ="tabs_admin",
+                  menuItem(" Admin section", tabName = "adminin",icon = tags$i(class = "fa fa-database"))
+                  
+                  #, menuItemOutput("mysidebar")
+      )
+    }
+  })
+  #Checking SS 4/26 admin functionality
+  observeEvent(input$sidebar,{
+    if(input$sidebar=="adminin"){
+      showModal(modalDialog(
+        title = "Admin Login",
+        size = "s",
+        fluidRow(
+          column(12,passwordInput("inp_admin_pass","Password")),
+          uiOutput("uio_verifystatus")
+        ),
+        easyClose = F,
+        #footer = NULL
+        footer = tagList(
+          actionButton("inp_validate","Validate"),
+          actionButton("inp_modal_close","Close")
+        )
+      ))
+    }
+  })
+  observeEvent(input$inp_validate,{
+    if(input$inp_admin_pass=="shinymanager"){
+      output$uio_verifystatus <- renderUI({
+        div()
+      })
+      removeModal()
+    }else{
+      output$uio_verifystatus <- renderUI({
+        div(h4("Wrong Password"))
+      })
+    }
+  })
+  observeEvent(input$inp_modal_close,{
+    output$uio_verifystatus <- renderUI({
+      div()
+    })
+    updateTabItems(session = session,"sidebar",selected = "Home")
+    removeModal()
+  })
+  observeEvent(input$selected_ind,{
+    #print("this is the selected indication")
+    
+    #print("------------------------------------------")
+    #print(paste(input$selected_ind, "this is the selected indication from the home filters"))
+    
+    #print("------------------------------------------")
+    observe({
+      
+      inFile <- input$selected_ind
+      if ( (is.null(inFile)) | (!any(grepl(paste0(input$selected_ind,".xlsx"),files_full_path))) )
+        return(NULL)
+      #print(inFile$datapath)
+      #print("This is the data path to ----------------")
+      #print()
+      #print(grep(paste0(inFile,".xlsx"),files_full_path, value = TRUE))
+      metadata <- read_excel_allsheets(grep(paste0(inFile,".xlsx"),files_full_path, value = TRUE))
+      
+      data_subitems <- as.character(c("All",unique(metadata$Codes$`Type of code`)))
+      data_mainitem <- list_main_indication_names
+      subitems(data_subitems)
+      mainitem(data_mainitem)
+      ###### do not uncomment the below line
+      #shinyjs::show(selector = "li[class='treeview shinyjs-hide']")
+    })
+    
+  })
+  
+  subitems <- reactiveVal(value = data_subitems)
+  mainitem <- reactiveVal(value = data_mainitem)
+  
+  # 
+  
+  
+  # dynamic content in the dynamic subitems #
+  observe({ 
+    
+    lapply(mainitem(),function(x){
+      #print(x)
+      #tite = x
+      myTabs <- list()
+      lapply(subitems(), function(y){
+        output[[gsub(" ","_",x)]] <- renderUI ({
+          list(fluidRow(
+            box("hello ", 
+                paste(x,input$tabs)
+            )
+          )) ####
+          myTabs <- lapply(subitems(), function(z){
+            tabPanel(title = glue("{z}"),
+                     h3(glue("Content {z} {x}")),
+                     column(10, align="center",
+                            # 
+                            #download button need to be updated to the file related to the specific indication selected
+                            tags$style(type="text/css", paste0("#down_",gsub(" ","_",x),z,"{background-color:SteelBlue;color: white;}", 
+                                                               "#down_",gsub(" ","_",x),z,":hover{background-color:#f5a352d4;transition: 0.8s;box-shadow: 0 0 0 7px #caba7e;}",
+                                                               "#down_",gsub(" ","_",x),z,":active{background-color: #ffbf00;}")),
+                            tags$style(type='text/css', paste0("#down_",gsub(" ","_",x),z,"{width:50%; margin-left: 10px;}")),
+                            div(style="display:inline-block", downloadButton(outputId=paste0("down_",gsub(" ","_",x),z), label=paste('Download', z , x,'codes')), style="display:center-align")
+                            
+                     ),
+                     #downloadButton(paste0("down_",x,z)),
+                     fluidRow(box(
+                       solidHeader = T,
+                       width = 12,
+                       collapsible = T,
+                       if (grepl("All",z) ){
+                         div(DT::dataTableOutput(paste0("all_CLSF_",gsub(" ","_",x),"_",z)), style = "font-size: 100%;height:10;")
+                       }
+                     )),
+                     fluidRow(
+                       hight=10,
+                       box(
+                         solidHeader = T,
+                         width = 12,
+                         collapsible = T,
+                         tags$style(HTML(paste(paste0("#CLSF_",gsub(" ","_",x),"_",z), "table {table-layout:fixed; width:100%;border: 1px solid red;}"))),
+                         tags$style(HTML("td.details-control-clsf {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control-clsf {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                  
+                                                  
+                                                  td.details-control-clsf1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control-clsf1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                  div.selectize-dropdown-content{background-color: #deac7a !important;}")),
+                         #diplaying metadata
+                         if (!grepl("All",z) ){
+                           
+                           div(DT::dataTableOutput(paste0("CLSF_",gsub(" ","_",x),"_",z)), style = "font-size: 100%;height:10;")
+                         }
+                         
+                       )))
+          })
+          
+          do.call(tabBox, args = c(id = "tabPanels",side = "left",width = 12 ,
+                                   
+                                   title = tagList(shiny::icon("rectangle-list")), myTabs))  
+          
+          
+        })
+        
+        observe({
+          
+          if(gsub(" ","_",x) == req(input$sidebar)){
+            
+            output[[paste0("down_",gsub(" ","_",x),y)]] <- downloadHandler(
+              filename = function() {
+                paste(x,y,"codes",Sys.Date(),".xlsx", sep = "")
+              },
+              content = function(file) {
+                
+                what_tab <- input$tabs
+                what_tab = gsub("_"," ",what_tab)
+                
+                path_to_display <- grep(paste0(what_tab,".xlsx"),files_full_path, value = TRUE)
+                #print(path_to_display)
+                metadata <- read_excel_allsheets(path_to_display)
+                #writexl::write_xlsx(list("All Codes" = metadata$Codes))
+                what_tab = gsub("_"," ",what_tab)
+                print(what_tab)
+                json_to_display <- paste0(file.path(adls_base_path,"Ipsen_Code_Library/myjson/"),what_tab,".json")
+                
+                backref <- read_json(json_to_display,simplifyVector = TRUE)
+                backref <- fromJSON(backref)
+                #print(backref$y)
+                df_list <- backref$y
+                df_list = Filter(function(k){length(k)>0}, df_list)
+                #print(df_list[[153]])
+                alist  = list()
+                print(y)
+                if (grepl("All",y)){
+                  alist[["Filters"]] <- data.frame(list("Therapeutic Area selected"=input$selected_ta,
+                                                        "Indication selected" = input$selected_ind,
+                                                        "Coding systems"=paste(unique(metadata$Codes$`Coding system`), collapse=", "),
+                                                        "Types of codes"=paste(unique(metadata$Codes$`Type of code`), collapse=", ")), check.names = FALSE)
+                  alist[["All Codes"]] <- metadata$Codes
+                  # print("############################################################################################# get ready this is working")
+                  # print(metadata$Codes)
+                  wb <- createWorkbook()
+                  addWorksheet(wb,"Filters")
+                  addWorksheet(wb,"All Codes")
+                  addWorksheet(wb, "References")
+                  curr_row <- 1
+                  
+                  for(i in seq_along(df_list)) {
+                    
+                    writeData(wb, "References", names(df_list)[i], startCol = 1, startRow = curr_row)
+                    writeData(wb, "References", df_list[[i]], startCol = 1, startRow = curr_row+1)
+                    curr_row <- curr_row + nrow(df_list[[i]]) + 2
+                    
+                  }
+                  print("Done writing workbook")
+                  writeData(wb,"All Codes", metadata$Codes)
+                  writeData(wb, "Filters", alist$Filters)
+                  Sys.sleep(1)
+                  saveWorkbook(wb, file,overwrite = TRUE)
+                  #writexl::write_xlsx(alist, file)
+                }else {
+                  alist[["Filters"]] <- data.frame(list("Therapeutic Area selected"=input$selected_ta,
+                                                        "Indication selected" = input$selected_ind,
+                                                        "Coding systems"=paste(unique(metadata$Codes[y == metadata$Codes$`Type of code`,]$`Coding system`),
+                                                                               collapse=", "),
+                                                        "Types of codes"=paste(unique(metadata$Codes[y == metadata$Codes$`Type of code`,]$`Type of code`),
+                                                                               collapse=", ")), check.names = FALSE)
+                  alist[[y]] <- metadata$Codes[y == metadata$Codes$`Type of code`,]
+                  df_list <- backref[y == backref$`Type of code`,"y"]
+                  wb <- createWorkbook()
+                  addWorksheet(wb,"Filters")
+                  addWorksheet(wb,y)
+                  addWorksheet(wb, "References")
+                  curr_row <- 1
+                  for(i in seq_along(df_list)) {
+                    writeData(wb, "References", names(df_list)[i], startCol = 1, startRow = curr_row)
+                    writeData(wb, "References", df_list[[i]], startCol = 1, startRow = curr_row+1)
+                    curr_row <- curr_row + nrow(df_list[[i]]) + 2
+                  }
+                  writeData(wb,y, alist[[y]])
+                  writeData(wb, "Filters", alist$Filters)
+                  saveWorkbook(wb, file,overwrite = TRUE) 
+                  #writexl::write_xlsx(alist, file)
+                }
+                
+                
+              }
+            )
+            if (grepl("All",y) ){
+              output[[paste0("all_CLSF_",gsub(" ","_",x),"_",y)]] <- DT::renderDataTable(
+                DT::datatable({
+                  metadata},
+                  filter = 'top',
+                  selection = 'none',
+                  escape = F,
+                  options = list(pageLength = 25,scrollX = TRUE,
+                                 columnDefs = list(
+                                   list(visible = FALSE, targets = c(0,5,6))
+                                   #list(orderable = FALSE, className = 'details-control-treats', targets = 1)
+                                 ),
+                                 
+                                 rowCallback = JS(
+                                   "function(row, data) {",
+                                   "var full_text = 'For more realated codes see related tab, and click on Plus ' + '' ",
+                                   "$('td', row).attr('title', full_text).css('width',700);",
+                                   "}")
+                  ),
+                  callback = JS(callback_clsf)
+                )
+              )}
+            if (!grepl("All",y) ){
+              #inFile <- input$file1
+              #metadata <- read_excel_allsheets(inFile$datapath)
+              what_tab <- input$tabs#str_extract(input$tabs, regex("(?<=_)(.*)(?=_)"))
+              what_tab = gsub("_"," ",what_tab)
+              
+              path_to_display <- paste0(file.path(adls_base_path,"Ipsen_Code_Library/myjson/"),what_tab,".json")#grep(paste0(what_tab,".xlsx"),files_full_path, value = TRUE)
+              
+              #print(path_to_display)
+              metadata <- read_json(path_to_display,simplifyVector = TRUE)
+              metadata <- fromJSON(metadata)
+              #read_excel_allsheets(path_to_display)
+              #metadata$Codes <- populate_data(metadata$Codes)
+              #print(metadata)
+              #print(paste("------------ tab selected is not main and this is the condition to check -------------",y))
+              #== "sub_Diagnosis"
+              
+              
+              data <- metadata[y == metadata$`Type of code`,]
+              #data <- 
+              #data[data["Details"] == "Internally approved only"," "] <- "No ressources found"
+              output[[paste0("CLSF_",gsub(" ","_",x),"_",y)]] <- DT::renderDataTable({
+                
+                
+                DT::datatable(
+                  {cbind(" "="",data)},
+                  escape = F,
+                  selection = 'none',filter = 'top',
+                  
+                  options = list(scrollX = TRUE,lengthMenu = list(c(25, 35,100), c('25', '35', '100')),
+                                 pageLength = 25, 
+                                 order = list(list(6, 'asc')),
+                                 columnDefs = list(
+                                   list(visible = FALSE, targets = c(0,5,6,7)),
+                                   list(orderable = FALSE, className = 'details-control-clsf', targets = 1)
+                                 ),
+                                 rowCallback = JS(
+                                   
+                                   "function(row, data, index) {",
+                                   "var full_text = 'For more realated codes, Click on Plus ' + '' ",
+                                   
+                                   "if (data[7] != 'No data avaialable' && data[7].length !== 0){",
+                                   "$('td', row).attr('title', full_text).css('width',700);",
+                                   "console.log('Array is empty!');",
+                                   "console.log(data[7] != 'No data avaialable');",
+                                   "console.log(data[7]);}",
+                                   "else if(data[7] == 'No data avaialable') {var td = $(row).find('td:first');",
+                                   "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                                   "td.removeClass('details-control-clsf');}",
+                                   "else {var td = $(row).find('td:first'); td.removeClass('details-control-clsf');",
+                                   "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                                   "}",
+                                   "}")),
+                  callback = JS(callback_clsf)
+                  #,
+                  #rownames = FALSE
+                )
+                
+                
+                ##else {return(NULL)}
+                
+              }
+              
+              
+              ########################################""
+              )}
+          }
+          
+        })
+        
+        
+      })
+      
+      
+    })
+    
+  })
+  
+  
+  # add and remove tabs
+  # observeEvent(input$add, {
+  #   req(input$add_subitem)
+  #   
+  #   s <- c(subitems(), input$add_subitem)
+  #   subitems(s)
+  #   
+  #   updateTabItems(session, "tabs", selected = "setup")
+  # })
+  # 
+  # observeEvent(input$rm, {
+  #   req(input$rm_subitem)
+  #   
+  #   s <- subitems()[-which(subitems() == input$rm_subitem)]
+  #   subitems(s)
+  #   
+  #   updateTabItems(session, "tabs", selected = "setup")
+  # })
+  ###################################################################################
+  ###################################################################################
+  ###################################################################################
+  
+  
+  
+  
+  observeEvent(input$help,{
+    showModal(modalDialog(
+      title = "Help!",
+      "Information",
+      h5('Not all coding data is available for now !'),
+      h5("________"),
+      br(),
+      infoBox("Please Contact", "Marion BONNET" ,"for more details", icon = icon('users'), width = 14)
+    ))
+  })
+  
+  # output$codes_tab_spasticity <- renderMenu({
+  #   if(input$select_resources==TRUE){
+  #     menuItem(" Coding data", tabName = "MCD", icon = tags$i(class = "fa fa-database"),
+  #              menuSubItem(" Browse treatments", tabName = "BMET", icon = icon("table")),
+  #              menuSubItem(" Browse diagnosis", tabName = "BMED", icon = icon("table")))
+  #   }
+  
+  # else if((input$reset_resources==TRUE))
+  #   shinyjs::hide(selector = "a[data-value='tab3']" )
+  # hide menuitem
+  
+  #})
+  
+  #-------------------------------------------HOME COMPONENETS-------------------------------------#
+  
+  
+  
+  # output$ncodelists <- renderInfoBox({
+  #   infoBox(
+  #     "Code lists available", paste0(nrow(metadata)), icon = icon("rectangle-list"),
+  #     color = "blue", fill = TRUE
+  #   )
+  # })
+  
+  
+  
+  
+  #------------------------------------------- Home COMPONENTS-------------------------------------#
+  
+  
+  # observeEvent(input$selected_ta, {
+  #   data<- prod_indic %>% filter_at(vars(therapeutic_area), any_vars(. %in% input$selected_ta))
+  #   
+  #   if(c("Rare Disease") %in% input$selected_ta){
+  #     
+  #     showNotification("Data is not available for Rare Disease filter! Please consider selecting another TA", type = "error", duration=5)
+  #     updatePickerInput(
+  #       session = session, inputId = "selected_ta",
+  #       choices = unique(as.character(data$therapeutic_area)),
+  #       selected = NULL
+  #     )
+  #     #shinyalert("Oops!", "Something went wrong.", type = "error")
+  #   } else {
+  #     
+  #     updatePickerInput(
+  #       session = session, inputId = "selected_ta",
+  #       choices = unique(as.character(data$therapeutic_area)),
+  #       selected = NULL
+  #     )
+  #     }
+  # 
+  # 
+  # }, ignoreInit = TRUE)
+  
+  
+  
+  
+  
+  observeEvent(input$selected_ta, {
+    
+    
+    data<- prod_indic %>% filter_at(vars(therapeutic_area), any_vars(. %in% input$selected_ta))
+    
+    if(length(unique(as.character(as.character(data[data$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`)))) > 1){
+      updatePickerInput(
+        session = session, inputId = "selected_ind",
+        choices = unique(as.character(data$`Study Indication - Verbatim`)),
+        selected = NULL
+      )}else if(length(unique(as.character(as.character(data[data$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`)))) == 1){
+        #print("Only one indication available for this product")
+        
+        updatePickerInput(session = session, inputId = "selected_ind",
+                          choices = unique(as.character(data$`Study Indication - Verbatim`)),
+                          #choicesOpt = list(stringr::str_trunc(choice_indications, width = 9)),
+                          selected = unique(data[data$therapeutic_area %in% input$selected_ta,]$`Study Indication - Verbatim`)#NULL#c("Spasticity")
+        )
+      } else {
+        return(NULL)
+      }
+    
+  }, ignoreInit = TRUE)
+  
+  
+  observeEvent(input$selected_ind, {
+    
+    
+    data<- prod_indic %>% filter_at(vars(`Study Indication - Verbatim`), any_vars(. %in% input$selected_ind))
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  ## RESET VALUES IN FILTERS
+  #attr(input, "readonly") <- 0
+  r <- reactiveValues(selec_res = 0)
+  menu_item_selected <- reactiveVal(value=list())
+  
+  reactive_indication = reactiveVal(NULL)
+  menu_vals = reactiveValues(menu_list = NULL)
+  
+  observeEvent(input$selected_ind,{
+    # condition <- ((!is.null(input$selected_ta) ) | (input$selected_ta == c("Rare Disease")))#&& (input$state1 == input$state2)
+    # feedbackDanger("selected_ta", condition, "Please select another filter")
+    # feedbackDanger("selected_ta", condition, "Please select another filter")
+    # req(!is.null(input$selected_ta), input$selected_ta == "Rare Disease")
+    
+    #shiny::validate(shiny::need(try(c("Rare Disease") %in% input$selected_ta), "Plsease selected a valid filter"))
+    
+    output$codes_tabs <- renderMenu({
+      menu_list <-rev(list(
+        menu_vals$menu_list[!duplicated(menu_vals$menu_list)]))
+      #print(mainitem())
+      
+      sidebarMenu(id = "tabs", .list = menu_list)
+      
+      
+      
+    })
+    if (any("Spasticity" %in% input$selected_ind)) {#choice_indications
+      
+      
+      output$codes_tab_spasticity <- renderMenu({
+        menu_list <-rev(list(
+          menu_vals$menu_list[!duplicated(menu_vals$menu_list)]))
+        #print(mainitem())
+        
+        sidebarMenu(id = "tabs", .list = menu_list)
+        
+        
+        
+      })
+      if (!all(menuItem(" Spasticity", tabName = "Spasticity", icon = tags$i(class = "fa fa-database")) %in% menu_vals$menu_list)){
+        #print(menu_vals$menu_list)
+        menu_vals$menu_list[[length(menu_vals$menu_list) + 1]] <- menuItem(" Spasticity", tabName = "Spasticity", icon = tags$i(class = "fa fa-database"))
+      }
+      
+      
+      output$spas <- renderUI({
+        #---------------Browse page--------------------#
+
+        tabItem(tabName = "Spasticity",
+                
+                tabBox(
+                  side = "left",
+                  width = 12,
+                  title = tagList(shiny::icon("rectangle-list"), "Browse Spasticity"),
+                  id = "B_treatments",
+                  selected = "All", 
+                  tabPanel("All",
+                           h3("Content Spasticity All Codes"),
+                           fluidRow(
+                             box(
+                               solidHeader = T,
+                               width=12,
+                               collapsible = T,
+                               div(DT::DTOutput("MT_all"), style = "font-size: 100%;hight:10;")
+                             )
+                           )),
+                  tabPanel("Treatments",
+                           
+                           h3("Content Spasticity Treatments"),
+                           
+                           fluidRow(
+                             box(
+                               solidHeader = T,
+                               width = 12,
+                               collapsible = F,
+                               column(10, align="center",
+                                      
+                                      #download button
+                                      tags$style(type="text/css", "#downloadAllDataSF {background-color:SteelBlue;color: white;} 
+                                               #downloadAllDataSF:hover{background-color:#f5a352d4;transition: 0.8s;box-shadow: 0 0 0 7px #caba7e;}
+                                               #downloadAllDataSF:active{background-color: #ffbf00;}"),
+                                      tags$style(type='text/css', "#downloadAllDataSF {width:35%; margin-left: 10px;}"),
+                                      div(style="display:inline-block", downloadButton(outputId='downloadAllDataSF', label='Download treatment codes'), style="display:center-align")
+                                      
+                               ))
+                           ),
+                           # fluidRow(
+                           #   
+                           #   box(
+                           #     solidHeader = T,
+                           #     width = 6,
+                           #     
+                           #     collapsible = T,
+                           #     collapsed = T,
+                           #     title = "Selected filters from previous page",
+                           #     h2(verbatimTextOutput("path_filters"),style="display:center-align"
+                           #        
+                           #     )
+                           #   ),
+                           #   box(
+                           #     solidHeader = T,
+                           #     width = 6,
+                           #     
+                           #     collapsible = T,
+                           #     collapsed = T,
+                           #     title = "Selected filters from current page",
+                           #     h2(verbatimTextOutput("path_filters2"),style="display:center-align"
+                           #        
+                           #     )
+                           #   )),
+                           # 
+                           
+                           
+                           
+                           
+                           div(DT::dataTableOutput("CLSF"),style = "font-size: 95%;hight:5; display:none; background: linear-gradient(#31386B,#473B6D,#4E5895);" ),
+                           tags$script(HTML("$(document).ready(function() {
+                                                                if(window.location.hash != '') {
+                                                                if (window.location.href.indexOf('#Treatments_Details') > -1){
+                                                                $('div:not(#CLSF)').hide();
+                                                                $('#CLSF').show();
+                                                                $('#CLSF').appendTo('body');
+                                                                document.getElementsByTagName('body')[0].style = 'background:linear-gradient(#31386B,#473B6D,#4E5895)';
+                                                                }
+                                                                }
+                                                                })")),
+                           a(href = "#Treatments_Details", target = "_blank",actionButton("Submit", "Submit"),
+                             style="display:none;"
+                           )
+                           
+                           ,
+                           
+                           
+                           
+                           fluidRow(
+                             hight=10,
+                             
+                             box(
+                               solidHeader = T,
+                               width = 12,
+                               
+                               collapsible = T,
+                               #diplaying metadata
+                               
+                               div(DT::DTOutput("MT"), style = "font-size: 100%;hight:10;"),
+                               tags$style(HTML("td.details-control-treats {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control-treats {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                  
+                                                  
+                                                  td.details-control-treats1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control-treats1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                  div.selectize-dropdown-content{background-color: #deac7a !important;}"))
+                             )
+                           )
+                           
+                           
+                           
+                  )
+                  
+                  
+                  
+                  ,
+                  #------------ Browse diagnosis tab --------------#
+                  tabPanel("Diagnoses",
+                           
+                           # fluidRow(
+                           #   
+                           #   column(4,align="left",  offset = 2,style='padding-bottom: 4px',
+                           #          
+                           #          pickerInput("Spasticity",
+                           #                      "Broad level spasticity cohort:",
+                           #                      multiple = TRUE,
+                           #                      options = pickerOptions(
+                           #                        actionsBox = TRUE,
+                           #                        selectedTextFormat = 'count',
+                           #                        
+                           #                        countSelectedText = "{0}/{1} selected"), 
+                           #                      c(
+                           #                        unique(as.character(metadata_a$Spasticity))),
+                           #                      selected = c(unique(as.character(metadata_a$Spasticity))))
+                           #   ),
+                           #   
+                           #   
+                           #   column(3,align="left",  offset = 2,style='padding-bottom: 4px',
+                           #          pickerInput("Etiology",
+                           #                      "Etiology:",
+                           #                      multiple = TRUE,
+                           #                      options = pickerOptions(
+                           #                        actionsBox = TRUE,
+                           #                        selectedTextFormat = 'count',
+                           #                        countSelectedText = "{0}/{1} selected"),                                             
+                           #                      c(unique(as.character(metadata_a$Etiology))),
+                           #                      selected = c(unique(as.character(metadata_a$Etiology))))
+                           #          
+                           #   ),
+                           #   
+                           # ),
+                           # 
+                           h3("Content Spasticity Diagnoses"),
+                           fluidRow(
+                             
+                             # column(3, align="right", offset = 2,style='padding-bottom: 4px', 
+                             #        actionButton('select1', 'Display diagnosis', icon = icon("hand-point-right")),
+                             #        tags$style(type='text/css', "#select1 { width:80%; bottom-margin = 5px; text-align:center; font-size: 15px; display: block;}")
+                             #        
+                             # ),
+                             box(
+                               solidHeader = T,
+                               width = 12,
+                               collapsible = F,
+                               column(10, align="center",
+                                      #column(10, align="left",
+                                      
+                                      #download button
+                                      tags$style(type="text/css", "#downloadAllDataSF1 {background-color:SteelBlue;color: white;} 
+                                               #downloadAllDataSF1:hover{background-color:#f5a352d4;transition: 0.8s;box-shadow: 0 0 0 7px #caba7e;}
+                                               #downloadAllDataSF1:active{background-color: #ffbf00;}"),
+                                      tags$style(type='text/css', "#downloadAllDataSF1 {width:48%; margin-left: 10px;}"),
+                                      div(style="display:inline-block", downloadButton(outputId='downloadAllDataSF1', label='Download diagnosis'), style="display:center-align")
+                                      
+                               )
+                               
+                             ))
+                           
+                           
+                           ,
+                           div(div(fluidRow(box(id="new_box",width=12,fluidRow(uiOutput("newWindowContent")))), style="display:none;")),
+                           
+                           
+                           fluidRow(
+                             box(
+                               solidHeader = T,
+                               width = 12,
+                               collapsible = T,
+                               #diplaying metadata
+                               div(DT::DTOutput("MTS"), style = "font-size: 100%;"),
+                               tags$style(HTML("td.details-control {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                  
+                                                  
+                                                  td.details-control1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+                                                      cursor: pointer;
+                                                  }
+                                                  tr.dt-hasChild td.details-control1 {
+                                                      width: 0px;
+                                                      background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+                                                  }
+                                                               div.selectize-dropdown-content{background-color: #deac7a !important;}"))
+                               
+                             )
+                           )
+                           
+                           
+                           
+                           
+                           
+                  )
+                  
+                  
+                  
+                ),
+                
+                fluidRow(
+                  box(
+                    solidHeader = F,
+                    width = 12,
+                    collapsible = F
+                  )
+                )
+                
+                
+                
+        )
+        
+        
+      })
+      
+    }
+    else if(is.null(input$selected_ta)) {
+      print(paste("No filter is selected for", " Therapeutic area"))
+      
+      shinyalert("Oops!", paste("Something went wrong. ", "\r\n \r\n" , "Please select a TA first"), type = "error")
+    } else if(is.null(input$selected_ind)) {
+      print(input$selected_ind)
+      print("############################################# user didn't select indication")
+      print(paste("No indication selected for", input$selected_ta))
+      
+      shinyalert("Oops!", paste("Something went wrong. ", "\r\n \r\n" , paste("No filter is selected for", input$selected_ta)), type = "error")
+    } else if (isolate(input$selected_ind %in% list_main_indication_names)) {
+      
+      
+      # output$codes_all_users <- renderMenu({
+      #   shiny::validate(need(!is.null(input$selected_ind),
+      #                        "")
+      #   )
+      #   
+      #   
+      #   menu_list <-rev(list(
+      #                unique(menu_vals$menu_list)))
+      #   #print(mainitem())
+      #   
+      #   sidebarMenu(id = "tabs", .list = menu_list)
+      # })
+      menu_vals$menu_list[[length(menu_vals$menu_list) + 1]] <- lapply(list_main_indication_names, function(y) {
+        if (y == input$selected_ind){
+          
+          menuItem(y, tabName = gsub(" ","_",y),  icon = tags$i(class = "fa fa-database"))
+        }
+        
+        
+      })
+      output$user_content <- renderUI({
+        
+        itemsSubs <- lapply(mainitem(),function(x){
+          
+          tabItem(tabName = gsub(" ","_",x), uiOutput(gsub(" ","_",x)))#,"_",y
+          
+        })
+        
+        items <- c(
+          
+          itemsSubs,
+          
+          list(
+            tabItem(tabName = "setup",
+                    
+                    textInput("add_subitem", "Add subitem"),
+                    actionButton("add", "add!"),
+                    
+                    selectInput("rm_subitem", "Remove subitem", choices = subitems()),
+                    actionButton("rm", "remove!")
+            )
+          )
+        )
+        
+        do.call(tabItems, items)
+      })
+      
+    }
+    else{
+      print("exc 1")
+      switch(input$selected_ind,
+             "Lung Cancer"={
+               print(input$selected_ind)
+               output$codes_tab_lung <- renderMenu({
+                 menuItem(" Lung Cancer", tabName = "Lung_Cancer", icon = tags$i(class = "fa fa-database")#,
+                          # menuSubItem(" Browse treatments", tabName = "lung_treat", icon = icon("table")),
+                          # menuSubItem(" Browse diagnosis", tabName = "NSCLC", icon = icon("table"))
+                          
+                 )
+               })
+               output$luca <- renderUI({
+                 useShinyjs()
+                 tabItem(tabName = "Lung_Cancer",
+                         
+                         
+                         tabBox(
+                           side = "left",
+                           width = 12,
+                           title = tagList(shiny::icon("rectangle-list"), "Browse Lung Cancer codes"),
+                           id = "Btabox",
+                           selected = "Diagnoses",
+                           
+                           
+                           
+                           tabPanel("Treatments",
+                                    h3("Content Lung Cancer Treatments"),
+                                    fluidRow(
+                                      
+                                      column(2
+                                      )
+                                      
+                                    ),
+                                    
+                                    fluidRow(
+                                      
+                                      column(4
+                                      ),
+                                      
+                                      column(4
+                                      )
+                                    ),
+                                    
+                                    fluidRow(
+                                      box(
+                                        solidHeader = T,
+                                        width = 12,
+                                        collapsible = T,
+                                        #diplaying metadata
+                                        div(DT::DTOutput("lung_treat_data"), style = "font-size: 100%;")
+                                      )
+                                    )
+                                    
+                           )
+                           
+                           
+                           ,
+                           #############################################################
+                           #############################################################
+                           ############################ NSCLC lung cancer and other stuff
+                           tabPanel("Diagnoses",
+                                    h3("Content Lung Cancer Diagnoses"),
+                                    fluidRow(
+                                      box(
+                                        solidHeader = F,
+                                        width = 12,
+                                        collapsible = F
+                                      )
+                                    ),
+                                    
+                                    
+                                    fluidRow(
+                                      box(
+                                        solidHeader = T,
+                                        width = 12,
+                                        collapsible = T,
+                                        #diplaying NSCLC metadata
+                                        div(DT::DTOutput("NSCLC"), style = "font-size: 100%;")
+                                      )
+                                    )
+                                    
+                                    
+                                    
+                                    ,
+                                    
+                                    
+                                    fluidRow(
+                                      box(
+                                        solidHeader = T,
+                                        width = 12,
+                                        collapsible = F,
+                                        
+                                      )
+                                    )
+                                    
+                           )
+                           
+                         ),
+                         
+                         
+                         fluidRow(
+                           box(
+                             solidHeader = T,
+                             width = 12,
+                             collapsible = F,
+                             
+                           )
+                         )
+                         
+                         
+                         
+                         
+                 )
+                 
+                 
+               })
+             },
+             "Thyroid Cancer" = {output$codes_tab_thyroid <- renderMenu({
+               menuItem(" Thyroid cancer", tabName = "MCCT", icon = tags$i(class = "fa fa-database")
+                        # ,
+                        # menuSubItem(" Browse treatments", tabName = "thyroid_treat", icon = icon("table")),
+                        # menuSubItem(" Browse diagnosis", tabName = "thyroid_diag", icon = icon("table"))
+               )
+             })
+             }
+      )
+      
+      
+    }
+    
+    
+    updateActionButton(session,"select_resources")
+    
+    r$selec_res <- 1
+    
+    
+    
+    if (input$sidebar != gsub(" ", "_",req(input$selected_ind)) && (input$sidebar %notin% c('Home','Sdownloads','SUPP'))){
+      
+      x = gsub(" ", "_", input$selected_ind)
+      shinyjs::hide(shinyjs::hide(selector = glue("div[id='shiny-tab-{input$sidebar}']"), anim = TRUE ), anim = TRUE )
+      Sys.sleep(0.2)
+      
+      
+      
+      
+    } 
+    updateTabItems(session, "sidebar", selected = gsub(" ", "_", input$selected_ind))
+    
+    reactive_indication(input$selected_ind)
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  observeEvent((input$sidebar %notin% c("adminin","Sdownloads","SUPP", "Home") ), {
+    if (input$sidebar %notin% c("adminin","Sdownloads","SUPP", "Home") ){
+      #print(glue("Active menu is ------------------ {input$sidebar}"))
+      #print(glue("Indication as filter selected is ------------------ {input$selected_ind}"))
+      #print(glue(" My reactive indication value is {reactive_indication()}"))
+      if(input$sidebar != gsub(' ','_',reactive_indication())){
+        #print(glue("################################################the side bar based on indication that will be hidden from {input$selected_ind}"))
+        shinyjs::hide(selector = glue("div[id='shiny-tab-{gsub(' ','_',input$selected_ind)}']"))
+      }
+      
+      data <- prod_indic %>% filter_at(vars(`Study Indication - Verbatim`), any_vars(. %in% gsub('_',' ',req(input$sidebar))))
+      ta_toselect <- unique(as.character(data$therapeutic_area))
+      
+      
+      updatePickerInput(
+        session = session, inputId = "selected_ta",
+        choices = unique(as.character(prod_indic$therapeutic_area)),
+        selected = ta_toselect
+      )
+      Sys.sleep(0.2)
+      
+      #print("2-5 sec have passe updating picker input indication")
+      data <- prod_indic %>% filter_at(vars(therapeutic_area), any_vars(. %in% unique(as.character(data$therapeutic_area))))
+      print(input$sidebar)
+      updatePickerInput(
+        session = session, inputId = "selected_ind",
+        choices = unique(as.character(data$`Study Indication - Verbatim`)),
+        selected = as.character(gsub("_", " ", input$sidebar))
+      )
+      # print('after the o;2 sec')
+      #  print(input$selected_ind)
+      
+    }
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  
+  ## BROWSE RESOURCES BUTTON 
+  # observeEvent(input$select_resources)
+  
+  ### DISTINCT OF CODE LISTS
+  
+  
+  #--------------------------------- BROWSE Treatments COMPONENTS -----------------------------------------------------#
+  
+  #create filtered select options
+  
+  
+  
+  # create the datatable METADATA from the filtered data
+  output$MT_all <- DT::renderDataTable({
+    metadata <- metadata[,c("Code_type","Code","Description")] %>% tibble::add_column(`Type of code`= "Treatments", .after = "Description")
+    metadata_a <- metadata_a[,c("Code_type","Code","Description")] %>% tibble::add_column(`Type of code`= "Diagnosis", .after = "Description")
+    metadata <- metadata %>% rename(`Coding system`="Code_type")
+    metadata$`Type of code` <- as.factor(metadata$`Type of code`)
+    metadata_a <- metadata_a %>% rename(`Coding system`="Code_type")
+    metadata_a$`Type of code` <- as.factor(metadata_a$`Type of code`)
+    datatable({
+      rbind(metadata,metadata_a)
+    },
+    escape = FALSE,
+    selection = 'none',filter = 'top',
+    rownames = FALSE,
+    options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),
+                   pageLength = 25, scrollX = TRUE,
+                   #order = list(list(6, 'asc'))
+                   #,
+                   # columnDefs = list(
+                   #   list(visible = FALSE, targets = c(0,5,6,7)),
+                   #   #list(orderable = FALSE, className = 'details-control-treats', targets = 1)
+                   # ),
+                   rowCallback = JS(
+                     "function(row, data) {",
+                     "var full_text = 'For more realated codes see related tab, and click on Plus ' + '' ",
+                     "$('td', row).attr('title', full_text).css('width',700);",
+                     "}"))#,
+    #callback = JS(callback_treats)
+    )
+    
+  }
+  )
+  output$MT <- DT::renderDataTable(
+    datatable({
+      cbind(" "="",metadata)},
+      escape = FALSE,
+      selection = 'none',filter = 'top',
+      
+      options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),
+                     pageLength = 25, scrollX = TRUE,
+                     order = list(list(6, 'asc')),
+                     columnDefs = list(
+                       list(visible = FALSE, targets = c(0,5,6,7)),
+                       list(orderable = FALSE, className = 'details-control-treats', targets = 1)
+                     ),
+                     rowCallback = JS(
+                       
+                       "function(row, data, index) {",
+                       "var full_text = 'For more realated codes, Click on Plus ' + '' ",
+                       
+                       "if (data[7] != 'No data avaialable' && data[7].length !== 0){",
+                       "$('td', row).attr('title', full_text).css('width',700);",
+                       "console.log('Array is empty!');",
+                       "console.log(data[7] != 'No data avaialable');",
+                       "console.log(data[7]);}",
+                       "else if(data[7] == 'No data avaialable') {var td = $(row).find('td:first');",
+                       "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                       "td.removeClass('details-control-clsf');}",
+                       "else {var td = $(row).find('td:first'); td.removeClass('details-control-clsf');",
+                       "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                       "}",
+                       "}")),
+      callback = JS(callback_treats)
+    )
+    
+    
+  )
+  
+  ###### view selected rows data
+  
+  # output$row_selected <- renderText({
+  #   filteredTable_data()[input$MT_rows_selected,2]
+  # })
+  ###### NEw window display event 
+  
+  # observeEvent(input$MT_rows_selected,{
+  #   shiny::validate(need(!is.null(input$MT_rows_selected), "Select a row to see more details."))
+  #   code <- as.character(filteredTable_data()[input$MT_rows_selected,1]$Code) 
+  #   if(filteredTable_data()[input$MT_rows_selected,2]$Code_type == "HCPCS") {
+  #     data_hcpcs <- read_csv(file.path("code_details",paste0(as.character(filteredTable_data()[input$MT_rows_selected,2]$Code_type),".csv")), show_col_types = FALSE)
+  #     if(any(grepl(code, data_hcpcs$Notice))){
+  #       data_new <<- SharedData$new(data_hcpcs[grepl(code, data_hcpcs$Notice),])
+  #       
+  #     } else {
+  #       
+  #       data_new <<- SharedData$new(hcpcs_data[grepl(code, hcpcs_data$Code),])
+  #     }
+  #   }
+  #   else if(filteredTable_data()[input$MT_rows_selected,2]$Code_type == "NDC") {
+  #     if(any(grepl(code,dataframe_ndc$product_ndc))){
+  #       
+  #       data_new <<- SharedData$new(dataframe_ndc[grepl(code,dataframe_ndc$product_ndc),])
+  #       
+  #       id <- showNotification(duration = 5, paste(" The last update of the NDC codes database is  ",updated_ndc_date,collapse = '\n'), type = "warning")
+  #     } else {
+  #       id <-  showNotification(duration = 5, paste(" The last update of the NDC codes database is  ",updated_ndc_date,collapse = '\n'), type = "warning")
+  #       
+  #       data_new <<- SharedData$new(dataframe_ndc[grepl(code,dataframe_ndc$packaging_package_ndc),])
+  #       
+  #       
+  #     }
+  #   }
+  #   
+  #   else if(filteredTable_data()[input$MT_rows_selected,2]$Code_type == "CPT") {
+  #     
+  #     data_new <<- SharedData$new(cpt_data[grepl(code,cpt_data$Code),])
+  #   }
+  #   shinyjs::click("Submit")
+  #   
+  # })
+  output$CLSF <- DT::renderDataTable({
+    DT::datatable(
+      data_new,
+      options = list(scrollX = TRUE))
+    
+    
+  }, server = FALSE)
+  
+  ## RESET VALUES IN FILTERS
+  
+  
+  
+  
+  
+  
+  
+  
+  #--------------------------------- BROWSE Diagnosis COMPONENTS -----------------------------------------------------#
+  
+  #create filtered select options
+  
+  observeEvent(input$Spasticity, {
+    
+    
+    data_sp <- metadata_a %>% filter_at(vars(Spasticity), any_vars(. %in% input$Spasticity))
+    
+    
+    
+    updatePickerInput(
+      session = session, inputId = "Etiology",
+      choices = unique(as.character(data_sp$Etiology)),
+      selected = NULL
+    )
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  
+  
+  
+  observeEvent(input$Etiology, {
+    
+    
+    data_sp <- metadata_a %>% filter_at(vars(Etiology), any_vars(. %in% input$Etiology))
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  #apply filters to metadata_a i.e Spasticity diagnosis data
+  
+  filtered_SP <- reactive({
+    
+    filter(metadata_a, Spasticity %in% input$Spasticity)
+    
+  })
+  
+  
+  
+  filtered_IND<- reactive({
+    #
+    filter(filtered_SP(), Etiology %in% input$Etiology)
+    #
+  })
+  
+  filteredTable_data_sp <- eventReactive(input$select1, {
+    filtered_IND()
+  }
+  )
+  #
+  #
+  # create the datatable METADATA_A for Spasycity diagnosis from the filtered data
+  output$MTS <- DT::renderDataTable(
+    datatable({
+      cbind(' ' = '',metadata_a)},
+      escape = -2,
+      selection = 'single',filter='top',
+      options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),
+                     pageLength = 25, scrollX = TRUE,
+                     columnDefs = list(
+                       list(visible = FALSE, targets = c(0,7)),
+                       list(orderable = FALSE, className = 'details-control', targets = 1)
+                     ), 
+                     rowCallback = JS(
+                       
+                       "function(row, data, index) {",
+                       "var full_text = 'For more realated codes, Click on Plus ' + '' ",
+                       
+                       "if (data[7] != 'No data avaialable' && data[7].length !== 0){",
+                       "$('td', row).attr('title', full_text).css('width',700);",
+                       "console.log('Array is empty!');",
+                       "console.log(data[7] != 'No data avaialable');",
+                       "console.log(data[7]);}",
+                       "else if(data[7] == 'No data avaialable') {var td = $(row).find('td:first');",
+                       "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                       "td.removeClass('details-control-clsf');}",
+                       "else {var td = $(row).find('td:first'); td.removeClass('details-control-clsf');",
+                       "$('td', row).attr('title', 'No more details are available on this code').css('width',700);",
+                       "}",
+                       "}")),
+      callback = JS(callback)
+    )
+    
+  )
+  
+  ## RESET VALUES IN FILTERS
+  
+  observeEvent(input$reset1,{
+    
+    updatePickerInput(
+      session = session, inputId = "Spasticity",
+      choices = unique(as.character(metadata_a$Spasticity)),
+      selected = NULL
+    )
+    
+    
+    
+    updatePickerInput(
+      session = session, inputId = "Etiology",
+      choices = unique(as.character(metadata_a$Etiology)),
+      selected = NULL
+    )
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  
+  
+  
+  ########################################
+  ############ NSCLC  ####################
+  observeEvent(input$Country, {
+    
+    
+    data_sp <- nsclc %>% filter_at(vars(COUNTRY), any_vars(. %in% input$Country))
+    
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  #apply filters to metadata_a i.e Spasticity diagnosis data
+  
+  filtered_nsclc <- reactive({
+    
+    filter(nsclc, COUNTRY %in% input$Country)
+    
+  })
+  
+  
+  
+  filteredTable_data_nsclc <- eventReactive(input$select_country, {
+    filtered_nsclc()
+    #print("something went wrong here")
+  }
+  )
+  #
+  #
+  # create the datatable METADATA_A for NSCLC from the filtered data
+  output$NSCLC <- DT::renderDataTable({
+    nsclc},
+    escape = FALSE, rownames = FALSE,
+    selection = 'multiple',filter = 'top',
+    options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25, scrollX = TRUE)
+    
+  )
+  output$thyroid_treat_data <- DT::renderDataTable({
+    shinyalert("Oops!", "No data available right now! Please contact the application administrator for more details. See Support section..", type = "error")
+    
+    NULL},
+    escape = FALSE, rownames = FALSE, selection = 'single',options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25, scrollX = TRUE)
+    
+  )
+  output$lung_treat_data <- DT::renderDataTable({
+    shinyalert("Oops!", "No data available right now! Please contact the application administrator for more details. See Support section..", type = "error")
+    
+    NULL},
+    escape = FALSE, rownames = FALSE, selection = 'single',options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25, scrollX = TRUE)
+    
+  )
+  
+  
+  ## RESET VALUES IN FILTERS
+  
+  observeEvent(input$reset_country,{
+    
+    updatePickerInput(
+      session = session, inputId = "Country",
+      choices = unique(as.character(nsclc$COUNTRY)),
+      selected = unique(as.character(nsclc$COUNTRY))
+    )
+    
+    
+    
+  }, ignoreInit = TRUE)
+  
+  ########################################
+  ############ Thyroid cancer ####################
+  observeEvent(input$Country1, {
+    
+    
+    data_sp <- t_cancer %>% filter_at(vars(COUNTRY), any_vars(. %in% input$Country1))
+    
+    
+    
+  }, ignoreInit = TRUE)
+  
+  
+  #apply filters to metadata_a i.e Spasticity diagnosis data
+  
+  filtered_thycancer <- reactive({
+    
+    filter(t_cancer, COUNTRY %in% input$Country1)
+    
+  })
+  
+  
+  
+  filteredTable_data_thycancer <- eventReactive(input$select_country1, {
+    filtered_thycancer()
+    #print("something went wrong here")
+  }
+  )
+  #
+  #
+  # create the datatable METADATA_A for NSCLC from the filtered data
+  output$thy_cancer <- DT::renderDataTable({
+    filteredTable_data_thycancer()},
+    escape = FALSE, rownames = FALSE,
+    selection = 'multiple',filter = 'top',
+    options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25, scrollX = TRUE)
+    
+  )
+  
+  ## RESET VALUES IN FILTERS
+  
+  observeEvent(input$reset_country1,{
+    
+    updatePickerInput(
+      session = session, inputId = "Country",
+      choices = unique(as.character(t_cancer$COUNTRY)),
+      selected = unique(as.character(t_cancer$COUNTRY))
+    )
+    
+    
+    
+  }, ignoreInit = TRUE)
+  
+  output$downloadAllDataSF <- downloadHandler(
+    
+    filename = function() { 
+      paste("Spasticity"," treatments", Sys.Date(), ".xlsx", sep="")
+    },
+    content = function(file) {
+      
+      writexl::write_xlsx(list("Spasticity treatments"=metadata), file)
+    }
+  )
+  output$downloadAllDataSF1 <- downloadHandler(
+    
+    filename = function() { 
+      paste("Spasticity Diagnosis", Sys.Date(), ".xlsx", sep="")
+    },
+    content = function(file) {
+      
+      writexl::write_xlsx(list("Spasticity diagnosis"=metadata_a[input[["MTS_rows_all"]],-5 ], "Related details"=bind_rows(metadata_a[input[["MTS_rows_all"]], "y"])), file)
+    }
+  )
+  output$downloadcode <- downloadHandler(
+    
+    filename = function() { 
+      paste(input$datanames ," codes-", Sys.Date(), ".xlsx", sep="")
+    },
+    content = function(file) {
+      if(input$datanames=="CPT"){writexl::write_xlsx(list("CPT"=cpt_data), file)}
+      else if (input$datanames=="HCPCS"){writexl::write_xlsx(list("HCPCS"=hcpcs_data), file)}
+      else if (input$datanames=="NDC"){writexl::write_xlsx(list("NDC"=dataframe_ndc), file)}
+      else if (input$datanames=="ICD10"){writexl::write_xlsx(list("ICD10"=icd_data_down), file)}
+      else if (input$datanames == "ICD9"){writexl::write_xlsx(list("ICD9"=icd9_data_down), file)}
+      else if (input$datanames == "ICD-O-3"){writexl::write_xlsx(list("ICD-O-3"=icdo3_data_down), file)}
+    }
+  )
+  output$data_to_download <- DT::renderDataTable(
+    if(input$datanames=="CPT"){
+      DT::datatable(
+        cpt_data[,c(2,1,3,4,5)],
+        selection = list(mode ='none'),
+        filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25,scrollX = TRUE),
+        rownames = FALSE
+      )}
+    else if (input$datanames=="HCPCS"){
+      DT::datatable(
+        hcpcs_data,
+        selection = list(mode ='none'),filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25,scrollX = TRUE),
+        rownames = FALSE
+      )
+    }
+    else if (input$datanames=="NDC"){
+      DT::datatable(
+        dataframe_ndc,
+        selection = list(mode ='none'),filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '35', '100')),pageLength = 25,scrollX = TRUE,
+                       columnDefs = list(
+                         list(className = "nowrap", targets = "_all")
+                       )),
+        rownames = FALSE
+      )
+    }
+    else if (input$datanames=="ICD10"){
+      DT::datatable(
+        icd_data_down,
+        selection = list(mode ='none'),filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '34', '100')),pageLength = 25,scrollX = TRUE),
+        rownames = FALSE
+      )
+    }
+    else if (input$datanames=="ICD9"){
+      DT::datatable(
+        icd9_data_down,
+        selection = list(mode ='none'),filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '34', '100')),pageLength = 25,scrollX = TRUE),
+        rownames = FALSE
+      )
+    }
+    else if (input$datanames=="ICD-O-3"){
+      DT::datatable(
+        icdo3_data_down,
+        selection = list(mode ='none'),filter='top',
+        options = list(lengthMenu = list(c(25, 35,100), c('25', '34', '100')),pageLength = 25,scrollX = TRUE),
+        rownames = FALSE
+      )
+    }
+  )
+  output$selected_dataname <- renderText({ 
+    input$datanames
+  })
+  
+  output$search_download <- renderUI({
+    withLoader(DT::DTOutput("data_to_download"), type="html", loader="dnaspin")
+    
+  })
+  
+  DTProxy2 <- dataTableProxy("data_to_download")
+  observeEvent(input$downloadengine, {
+    #print(input$downloadengine)
+    updateSearch(
+      DTProxy2,
+      keywords = list(global = input$downloadengine, columns = NULL)
+    )
+  }, ignoreInit = TRUE)
+  observe({
+    #print(paste(input$selected_ta,"&", input$selected_ind))
+    output$path_filters_bis <- renderText({
+      paste("Product selected : ",input$selected_ta," \n\n  Indication selected : ", input$selected_ind)
+    })
+    output$path_filters2_bis <- renderText({
+      paste("Product selected : ",input$selected_ta," \n\n Country selected : ", input$Country1)
+      c("Country selected : \t", paste(input$Country, collapse = ' -&- '))
+    })
+  })
+  observe({
+    #print(paste(input$selected_ta,"&", input$selected_ind))
+    output$path_filters <- renderText({
+      paste("Product selected : ",input$selected_ta," \n\n Indication selected : ", input$selected_ind)
+    })
+  })
+  observe({
+    #print(paste(input$selected_ta,"&", input$selected_ind))
+    output$path_filters2 <- renderText({
+      #paste("Treatment selected : ",input$Treatment," \n Code type selected : ", input$Code_type)
+      c("Treatments selected : \t", paste(input$Treatment, collapse = ' -&- '),"\n\n Code type selected : \t", paste(input$Code_type, collapse = ' -&- '))
+      #print(input$Code_type)
+    })
+  })
+  observeEvent(!is.null(input$MTS_rows_selected),{js$collapse("boxdetailsicd")
+  })
+  observeEvent(!is.null(input$MT_rows_selected),{js$collapse("boxdetails_spasticity")})
+  observeEvent(input$datanames,{
+    #print(input$datanames)
+    print(input$downloadengine_text)
+    updateSearchInput(session = session, value="", inputId="downloadengine")
+  })
+  
+  
+  observeEvent(input$action_logout, {
+    file.create(file.path(adls_base_path,"Ipsen_Code_Library/restart.txt"))
+    print("file restart.txt have been created")
+    
+    
+  })
+  observeEvent(input$apply_updates, {
+    shinyalert("Success!", "You just added new data.", type = "success")
+    file.create(file.path(adls_base_path,"Ipsen_Code_Library/restart.txt"))
+    print("file restart.txt have been created")
+    
+    
+    
+  })
+  observe({  
+    if (is.null(input$file1) ) {    return(NULL)  }
+    
+    #print(input$file1$name)
+    file.copy(from = input$file1$datapath, to =  file.path(adls_base_path,"Ipsen_Code_Library/data_from_users",input$file1$name))
+    
+    file_name <- read_excel_allsheets(input$file1$datapath)$Summary[,4]
+    #print(file_name)
+    if (file.exists(file.path(adls_base_path,"Ipsen_Code_Library/data_from_users",paste0(file_name,".xlsx")))){# this used at first input$file1$name
+      # step 0 check if the file exist is done ! here we are 
+      # step 1 check for non-similarities
+      # step 2 merge the new added rows (only if step 1 is true)
+      # step 3 save merged data ()
+      # read_excel(inFile$datapath)
+      uploaded_data = read_excel_allsheets(input$file1$datapath)
+      data_old = read_excel_allsheets(file.path(adls_base_path,"Ipsen_Code_Library/data_from_users",input$file1$name))
+      sheet_names = c("Summary","Codes")
+      if (all(sheet_names %in% names(uploaded_data))){
+        print("sheet names are correct")
+        showNotification("Sheet names are correct", type = "message", duration=60)
+        
+      } else {
+        showNotification("Sheet names are worng! watch out !", type = "error", duration=60)
+      }
+      funct_print = list()
+      compared_data = list()
+      new_compared_data =list()
+      reverse_compared_data = list()
+      for (i in sheet_names){
+        
+        compared_data[[i]] <- compare_frames(uploaded_data[[i]], data_old[[i]])
+        new_compared_data[[i]] <- compare_frames(uploaded_data[[i]], data_old[[i]], onlynew = TRUE)
+        funct_print <- append(funct_print, paste("-",i, "Sheet ","\n",paste(compare_frames(uploaded_data[[i]], data_old[[i]], ret = FALSE), collapse = "\n")))
+        
+      }
+      
+      output$upload_messages <- renderText({
+        paste(funct_print, collapse = "\n")
+      })
+      #new_name = gsub(".xlsx","",input$file1$name)
+      #file.copy(from = input$file1$datapath, to =  file.path("data_from_users",paste0(new_name," bis",".xlsx"))  )
+      ############################################################################################
+      output$summary_data <- DT::renderDataTable({
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+          return(NULL)
+        summ_da <- read_excel(inFile$datapath)[,c("TA",4)]
+        print(summ_da)
+        DT::datatable(
+          summ_da[,c("TA",4)],
+          filter = 'none',
+          selection = 'none',
+          options = list(pageLength = 25,scrollX = TRUE),
+          rownames = FALSE)
+        #print(inFile$datapath)
+      })
+      
+      output$treatments_data <- DT::renderDataTable({
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+          return(NULL)
+        
+        DT::datatable(
+          new_compared_data[["Treatment"]],#read_excel(inFile$datapath, sheet = "Treatment"),
+          filter = 'none',
+          selection = 'none',
+          options = list(pageLength = 25,scrollX = TRUE),
+          rownames = FALSE)
+        #print(inFile$datapath)
+      })
+      
+      output$diagnosis_data <- DT::renderDataTable({
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+          return(NULL)
+        
+        DT::datatable(
+          new_compared_data[["Diagnosis"]],#read_excel(inFile$datapath, sheet = "Diagnosis"),
+          filter = 'none',
+          selection = 'none',
+          options = list(pageLength = 25,scrollX = TRUE),
+          rownames = FALSE)
+        #print(inFile$datapath)
+      })
+      
+      ###############################################################################################
+      writexl::write_xlsx(compared_data,file.path(adls_base_path,"Ipsen_Code_Library/data_from_users",input$file1$name))
+      
+    }
+    else {
+      ############################################################################################
+      output$summary_data <- DT::renderDataTable({
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+          return(NULL)
+        summ_da <- read_excel(inFile$datapath)
+        DT::datatable(
+          summ_da[,c(1,4)],
+          filter = 'none',
+          selection = 'none',
+          options = list(pageLength = 25,scrollX = TRUE),
+          rownames = FALSE)
+        #print(inFile$datapath)
+      })
+      
+      output$treatments_data <- DT::renderDataTable({
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+          return(NULL)
+        
+        DT::datatable(
+          read_excel(inFile$datapath, sheet = "Codes"),
+          filter = 'none',
+          selection = 'none',
+          options = list(pageLength = 25,scrollX = TRUE),
+          rownames = FALSE)
+        #print(inFile$datapath)
+      })
+      
+      # output$diagnosis_data <- DT::renderDataTable({
+      #   
+      #   inFile <- input$file1
+      #   
+      #   if (is.null(inFile))
+      #     return(NULL)
+      #   
+      #   DT::datatable(
+      #     read_excel(inFile$datapath, sheet = "Diagnosis"),
+      #     filter = 'none',
+      #     selection = 'none',
+      #     options = list(pageLength = 25,scrollX = TRUE),
+      #     rownames = FALSE)
+      #   #print(inFile$datapath)
+      # })
+      
+      ###############################################################################################
+      path_to_user_data <- file.path(adls_base_path,"Ipsen_Code_Library/data_from_users")
+      files_full_path <- dir(path_to_user_data, pattern="\\.xlsx$", full.names = TRUE)
+      file_names_ <- dir(path_to_user_data,pattern="\\.xlsx$", full.names = FALSE)
+      ta_indic <- pairlist()
+      files_new_names <- list()
+      
+      for (i in files_full_path){
+        dataframe = read_excel(i)
+        couple = c(names(dataframe)[4], dataframe[1,c(4)][[1]])
+        files_new_names = append(files_new_names, dataframe[1,c(4)][[1]])
+        ta_indic = append(ta_indic, pairlist(couple))
+      }
+      for (filename in Map(c,files_new_names,files_full_path)){
+        print(filename[2])
+        print(filename[1])
+        if(file.exists(filename[2])){
+          # Rename file name
+          
+          file.rename(filename[2],file.path(adls_base_path,"Ipsen_Code_Library/data_from_users/",paste0(filename[1],".xlsx")))
+          print("file renaming succed !")
+        }else{
+          print('File Not found :')
+          
+        }
+      }
+      
+    }
+    
+    output$title_treatments <- renderText({
+      "Uploaded Data"
+    })
+    
+    output$title_diagnosis <- renderText({
+      "Treatments Data"
+    })
+    
+  })
+  
+  observe({
+    #print(paste("selected tab is >>>> ",input$tabs)) 
+    print("Debbuging as a Noob using print ;)")
+  })
+  output$downloadtemplate <- downloadHandler(
+    
+    filename = function() { 
+      paste("Codes Data entry temlpate","", ".xlsx", sep="")
+    },
+    content = function(file) {
+      template_file <- read_excel_allsheets(file.path(adls_base_path,"Ipsen_Code_Library/data_entry_template.xlsx"))
+      file.copy(from = file.path(adls_base_path,"Ipsen_Code_Library/data_entry_template.xlsx"), to =  file  )
+      #writexl::write_xlsx(list("Summary"=template_file$Summary,"Diagnosis"=template_file$Diagnosis, "Treatment"=template_file$Treatment), file)
+    }
+  )
+}
+
+# Run the application
+options(shiny.host = '0.0.0.0')
+options(shiny.port = 8082)
+shinyApp(ui = ui, server = server)
+# If you attempt to run this locally make sure to change the data paths to your 
+# local machine
+# This part is only for checking for the app is running smoothly
+# The deployed version on for the shiny server is under 
+# /srv/shiny-server/
+# To use this in the cronitor file to schedule the excecution
+# format is ->> 0 7 1-31 1-12 *  <<-
